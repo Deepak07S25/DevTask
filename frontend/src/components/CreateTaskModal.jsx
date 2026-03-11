@@ -5,24 +5,29 @@ import API from '../api/axios';
 const DEFAULT_FORM = {
   title: '',
   description: '',
+  type: 'TASK',
+  epicId: '',
   status: 'TODO',
   priority: 'MEDIUM',
   assigneeId: '',
   dueDate: '',
 };
 
-const CreateTaskModal = ({ isOpen, onClose, projectId, onTaskCreated }) => {
+const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }) => {
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [epics, setEpics] = useState([]);
+  const [epicsLoading, setEpicsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch project members when modal opens
+  // Fetch project members and epics when modal opens
   useEffect(() => {
     if (!isOpen || !projectId) return;
     setFormData(DEFAULT_FORM);
     setError('');
+    
     const fetchMembers = async () => {
       setMembersLoading(true);
       try {
@@ -34,7 +39,21 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, onTaskCreated }) => {
         setMembersLoading(false);
       }
     };
+
+    const fetchEpics = async () => {
+      setEpicsLoading(true);
+      try {
+        const res = await API.get(`/tasks?projectId=${projectId}&type=EPIC`);
+        setEpics(res.data);
+      } catch {
+        setEpics([]);
+      } finally {
+        setEpicsLoading(false);
+      }
+    };
+
     fetchMembers();
+    fetchEpics();
   }, [isOpen, projectId]);
 
   if (!isOpen) return null;
@@ -52,6 +71,9 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, onTaskCreated }) => {
         projectId,
         assigneeId: formData.assigneeId || null,
         dueDate: formData.dueDate || null,
+        sprintId: sprintId || null,
+        type: formData.type || 'TASK',
+        epicId: formData.epicId || null,
       };
       const res = await API.post('/tasks', payload);
       onTaskCreated(res.data);
@@ -100,6 +122,44 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, onTaskCreated }) => {
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
             />
+          </div>
+
+          {/* Type + Epic Link */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Issue Type</label>
+              <select
+                className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500"
+                value={formData.type}
+                onChange={(e) => {
+                   handleChange('type', e.target.value);
+                   if (e.target.value === 'EPIC') handleChange('epicId', '');
+                }}
+              >
+                <option value="TASK">🟦 Task</option>
+                <option value="STORY">🟩 Story</option>
+                <option value="BUG">🟥 Bug</option>
+                <option value="EPIC">🟪 Epic</option>
+              </select>
+            </div>
+            {formData.type !== 'EPIC' && (
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                  Epic Link {epicsLoading && <span className="text-zinc-600 ml-1">(...)</span>}
+                </label>
+                <select
+                  className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500 disabled:opacity-50"
+                  value={formData.epicId}
+                  onChange={(e) => handleChange('epicId', e.target.value)}
+                  disabled={epicsLoading}
+                >
+                  <option value="">— None —</option>
+                  {epics.map((e) => (
+                    <option key={e.id} value={e.id}>{e.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Status + Priority */}

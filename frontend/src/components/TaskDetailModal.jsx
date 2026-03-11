@@ -45,6 +45,8 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
   const [formData, setFormData] = useState({
     title: task?.title || '',
     description: task?.description || '',
+    type: task?.type || 'TASK',
+    epicId: task?.epicId || '',
     status: task?.status || 'TODO',
     priority: task?.priority || 'MEDIUM',
     dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
@@ -55,6 +57,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
 
   // Members for assignee picker
   const [members, setMembers] = useState([]);
+  const [epics, setEpics] = useState([]);
 
   // Comments state
   const [comments, setComments] = useState([]);
@@ -68,6 +71,8 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     setFormData({
       title: task.title,
       description: task.description || '',
+      type: task.type || 'TASK',
+      epicId: task.epicId || '',
       status: task.status,
       priority: task.priority,
       dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
@@ -76,11 +81,14 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     setIsEditing(false);
     setConfirmDelete(false);
     fetchComments();
-    // Fetch members for assignee picker
+    // Fetch members and epics
     if (projectId) {
       API.get(`/projects/${projectId}/members`)
         .then((res) => setMembers(res.data))
         .catch(() => setMembers([]));
+      API.get(`/tasks?projectId=${projectId}&type=EPIC`)
+        .then((res) => setEpics(res.data))
+        .catch(() => setEpics([]));
     }
   }, [task?.id, isOpen]);
 
@@ -107,6 +115,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
         ...formData,
         dueDate: formData.dueDate || null,
         assigneeId: formData.assigneeId || null,
+        epicId: formData.type === 'EPIC' ? null : (formData.epicId || null),
       };
       const res = await API.patch(`/tasks/${task.id}`, payload);
       onTaskUpdated(res.data);
@@ -135,6 +144,8 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     setFormData({
       title: task.title,
       description: task.description || '',
+      type: task.type || 'TASK',
+      epicId: task.epicId || '',
       status: task.status,
       priority: task.priority,
       dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
@@ -219,8 +230,29 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
 
             {/* Status + Priority selects (edit mode) */}
             {isEditing && (
-              <div className="flex gap-3">
-                <div className="flex-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1.5">Issue Type</label>
+                  <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.type} onChange={(e) => {
+                     handleChange('type', e.target.value);
+                     if (e.target.value === 'EPIC') handleChange('epicId', '');
+                  }}>
+                    <option value="TASK">🟦 Task</option>
+                    <option value="STORY">🟩 Story</option>
+                    <option value="BUG">🟥 Bug</option>
+                    <option value="EPIC">🟪 Epic</option>
+                  </select>
+                </div>
+                {formData.type !== 'EPIC' && (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1.5">Epic Link</label>
+                    <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.epicId} onChange={(e) => handleChange('epicId', e.target.value)}>
+                      <option value="">— None —</option>
+                      {epics.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Status</label>
                   <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.status} onChange={(e) => handleChange('status', e.target.value)}>
                     <option value="TODO">To Do</option>
@@ -228,7 +260,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
                     <option value="DONE">Done</option>
                   </select>
                 </div>
-                <div className="flex-1">
+                <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Priority</label>
                   <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.priority} onChange={(e) => handleChange('priority', e.target.value)}>
                     <option value="LOW">Low</option>
@@ -239,11 +271,23 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
               </div>
             )}
 
-            {/* Status badge (view mode) */}
+            {/* Properties badge (view mode) */}
             {!isEditing && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-zinc-500">Status:</span>
-                <span className="text-xs font-bold text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-full">{STATUS_LABELS[task.status]}</span>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-zinc-500">Type:</span>
+                  <span className="text-xs font-bold text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-full">{task.type || 'TASK'}</span>
+                </div>
+                {task.epic && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-zinc-500">Epic:</span>
+                    <span className="text-xs font-bold text-purple-300 bg-purple-900/40 border border-purple-800/50 px-2.5 py-1 rounded-full">{task.epic.title}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-zinc-500">Status:</span>
+                  <span className="text-xs font-bold text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-full">{STATUS_LABELS[task.status]}</span>
+                </div>
               </div>
             )}
 

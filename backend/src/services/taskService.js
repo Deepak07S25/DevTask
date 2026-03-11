@@ -1,6 +1,6 @@
 const prisma = require('../db/client');
 
-const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId) => {
+const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId) => {
     return await prisma.$transaction(async (tx) => {
         const task = await tx.task.create({
             data: {
@@ -10,10 +10,15 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
                 assigneeId: assigneeId || null,
                 status: status || 'TODO',
                 priority: priority || 'MEDIUM',
-                dueDate: dueDate ? new Date(dueDate) : null
+                dueDate: dueDate ? new Date(dueDate) : null,
+                sprintId: sprintId || null,
+                type: type || 'TASK',
+                epicId: epicId || null,
             },
             include: {
-                assignee: { select: { id: true, name: true, email: true } }
+                assignee: { select: { id: true, name: true, email: true } },
+                sprint: { select: { id: true, name: true, status: true } },
+                epic: { select: { id: true, title: true } }
             }
         });
 
@@ -30,11 +35,22 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
     });
 };
 
-const getProjectTasks = async (projectId) => {
+const getProjectTasks = async (projectId, sprintId, type) => {
+    const where = { projectId, deletedAt: null };
+    if (sprintId === 'backlog') {
+        where.sprintId = null;
+    } else if (sprintId) {
+        where.sprintId = sprintId;
+    }
+    if (type) {
+        where.type = type;
+    }
     return await prisma.task.findMany({
-        where: { projectId },
+        where,
         include: {
-            assignee: { select: { id: true, name: true, email: true } }
+            assignee: { select: { id: true, name: true, email: true } },
+            sprint: { select: { id: true, name: true, status: true } },
+            epic: { select: { id: true, title: true } }
         },
         orderBy: { createdAt: 'desc' }
     });

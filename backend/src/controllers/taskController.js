@@ -2,8 +2,8 @@ const taskService = require("../services/taskService");
 
 const createTask = async (req, res) => {
   try {
-    const { title, description, projectId, assigneeId, status, priority, dueDate } = req.body;
-    const userId = req.user; // authMiddleware sets req.user = decoded.userId (a string)
+    const { title, description, projectId, assigneeId, status, priority, dueDate, sprintId, type, epicId } = req.body;
+    const userId = req.user;
     const task = await taskService.createTask(
       title,
       description,
@@ -12,7 +12,10 @@ const createTask = async (req, res) => {
       status,
       priority,
       dueDate,
-      userId
+      userId,
+      sprintId,
+      type,
+      epicId
     );
     res.status(201).json(task);
   } catch (error) {
@@ -21,11 +24,11 @@ const createTask = async (req, res) => {
 };
 const getTasks = async (req, res) => {
     try {
-        const { projectId } = req.query; // Read from query string: ?projectId=...
-        const tasks = await taskService.getProjectTasks(projectId);
-        res.status(200).json(tasks);
+        const { projectId, sprintId, type } = req.query;
+        const tasks = await taskService.getProjectTasks(projectId, sprintId, type);
+        res.json(tasks);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(400).json({ error: error.message });
     }
 };
 
