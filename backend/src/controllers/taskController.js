@@ -1,5 +1,15 @@
 const taskService = require("../services/taskService");
 
+const getMyTasks = async (req, res) => {
+    try {
+        const userId = req.user;
+        const tasks = await taskService.getMyTasks(userId);
+        res.json(tasks);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
 const createTask = async (req, res) => {
   try {
     const { title, description, projectId, assigneeId, status, priority, dueDate, sprintId, type, epicId } = req.body;
@@ -24,8 +34,8 @@ const createTask = async (req, res) => {
 };
 const getTasks = async (req, res) => {
     try {
-        const { projectId, sprintId, type } = req.query;
-        const tasks = await taskService.getProjectTasks(projectId, sprintId, type);
+        const { projectId, sprintId, type, search, assigneeId, priority } = req.query;
+        const tasks = await taskService.getProjectTasks(projectId, sprintId, type, search, assigneeId, priority);
         res.json(tasks);
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -57,4 +67,4 @@ const deleteTask = async (req, res) => {
 };
 
 // Update your exports
-module.exports = { createTask, getTasks, updateTask, deleteTask };
+module.exports = { createTask, getTasks, getMyTasks, updateTask, deleteTask };

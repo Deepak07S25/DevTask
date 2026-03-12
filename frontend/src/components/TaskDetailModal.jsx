@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Trash2, Save, Edit2, Send, MessageSquare, History } from 'lucide-react';
 import API from '../api/axios';
 import ActivityTimeline from './ActivityTimeline';
+import MarkdownEditor, { MarkdownContent } from './MarkdownEditor';
 
 const PRIORITY_STYLES = {
   HIGH: 'bg-red-900/50 text-red-400 border-red-800',
@@ -295,11 +296,20 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
             <div>
               <label className="block text-xs font-medium text-zinc-500 mb-1.5">Description</label>
               {isEditing ? (
-                <textarea rows={3} className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white focus:border-sky-500 outline-none resize-none" value={formData.description} onChange={(e) => handleChange('description', e.target.value)} placeholder="Add a description..." />
+                <MarkdownEditor
+                  value={formData.description}
+                  onChange={(val) => handleChange('description', val)}
+                  placeholder="Add a description... (Markdown supported)"
+                  minHeight="140px"
+                />
               ) : (
-                <p className="text-zinc-400 text-sm leading-relaxed min-h-[40px]">
-                  {task.description || <span className="italic text-zinc-600">No description</span>}
-                </p>
+                <div className="min-h-[40px] text-sm">
+                  {task.description ? (
+                    <MarkdownContent content={task.description} />
+                  ) : (
+                    <span className="italic text-zinc-600">No description</span>
+                  )}
+                </div>
               )}
             </div>
 

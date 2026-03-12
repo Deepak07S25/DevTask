@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, Plus, Calendar, Users, List, ChevronDown, Layers, Bookmark, Bug, CheckSquare } from "lucide-react";
 import API from "../api/axios";
@@ -7,6 +7,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import CreateTaskModal from "../components/CreateTaskModal";
 import TaskDetailModal from "../components/TaskDetailModal";
 import MembersModal from "../components/MembersModal";
+import FilterBar from "../components/FilterBar";
 
 const PRIORITY_STYLES = {
   HIGH: "bg-red-900/40 text-red-400 border border-red-900/60",
@@ -32,7 +33,8 @@ const Board = () => {
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [sprints, setSprints] = useState([]);
-  const [activeSprint, setActiveSprint] = useState(null); // null = no sprint filter
+  const [members, setMembers] = useState([]);
+  const [activeSprint, setActiveSprint] = useState(null);
   const [isSprintDropOpen, setIsSprintDropOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -40,25 +42,33 @@ const Board = () => {
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({ search: "", assigneeId: "", priority: "", type: "" });
+  const debounceRef = useRef(null);
 
-  // Fetch sprints once
+  // Fetch sprints + members once
   useEffect(() => {
     sprintApi.getSprints(id).then((data) => {
       setSprints(data);
-      // Auto-select the active sprint if there is one
       const active = data.find((s) => s.status === "ACTIVE");
       if (active) setActiveSprint(active);
     }).catch(() => {});
+    API.get(`/projects/${id}/members`).then((res) => setMembers(res.data)).catch(() => {});
   }, [id]);
 
-  // Fetch tasks whenever activeSprint changes
-  const fetchTasks = useCallback(async (sprint) => {
+  // Fetch tasks whenever activeSprint or filters change (with debounce on search)
+  const fetchTasks = useCallback(async (sprint, activeFilters) => {
     setLoading(true);
     setError(null);
     try {
+      const params = new URLSearchParams({ projectId: id });
+      if (sprint) params.set("sprintId", sprint.id);
+      if (activeFilters.search) params.set("search", activeFilters.search);
+      if (activeFilters.assigneeId) params.set("assigneeId", activeFilters.assigneeId);
+      if (activeFilters.priority) params.set("priority", activeFilters.priority);
+      if (activeFilters.type) params.set("type", activeFilters.type);
       const [projRes, taskRes] = await Promise.all([
         API.get(`/projects/${id}`),
-        API.get(`/tasks?projectId=${id}${sprint ? `&sprintId=${sprint.id}` : ""}`),
+        API.get(`/tasks?${params.toString()}`),
       ]);
       setProject(projRes.data);
       setTasks(taskRes.data);
@@ -70,8 +80,20 @@ const Board = () => {
   }, [id]);
 
   useEffect(() => {
-    fetchTasks(activeSprint);
-  }, [activeSprint, fetchTasks]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchTasks(activeSprint, filters);
+    }, filters.search ? 350 : 0);
+    return () => clearTimeout(debounceRef.current);
+  }, [activeSprint, filters, fetchTasks]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ search: "", assigneeId: "", priority: "", type: "" });
+  };
 
   // ---- Callbacks ----
   const handleTaskCreated = (newTask) => setTasks((prev) => [newTask, ...prev]);
@@ -243,6 +265,14 @@ const Board = () => {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      <FilterBar
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClear={handleClearFilters}
+        members={members}
+      />
+
       {/* No active sprint hint */}
       {sprints.length > 0 && !activeSprint && (
         <div className="mb-6 bg-amber-900/20 border border-amber-900/40 text-amber-400 text-sm px-5 py-3 rounded-xl flex items-center gap-2">
@@ -258,13 +288,13 @@ const Board = () => {
       )}
 
       {/* Kanban Columns */}
-      <div className="flex gap-6 overflow-x-auto pb-4">
+      <div className="grid grid-cols-3 gap-6 pb-4">
         {columns.map((column) => {
           const columnTasks = tasks.filter((t) => t.status === column.key);
           return (
             <div
               key={column.key}
-              className="min-w-[320px] flex-shrink-0 bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800"
+              className="min-w-0 w-full bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.key)}
             >
@@ -318,10 +348,18 @@ const Board = () => {
                         </div>
                       )}
 
-                      {/* Description */}
+                      {/* Description preview — strip markdown and show single truncated line */}
                       {task.description && (
-                        <p className="text-xs text-zinc-500 line-clamp-2 mb-3">
-                          {task.description}
+                        <p className="text-xs text-zinc-500 line-clamp-1 mb-3">
+                          {task.description
+                            .replace(/#{1,6}\s*/g, '')
+                            .replace(/\*\*(.+?)\*\*/g, '$1')
+                            .replace(/\*(.+?)\*/g, '$1')
+                            .replace(/`{1,3}[^`]*`{1,3}/g, '')
+                            .replace(/^[-*+]\s+/gm, '')
+                            .replace(/!?\[.*?\]\(.*?\)/g, '')
+                            .replace(/\n+/g, ' ')
+                            .trim()}
                         </p>
                       )}
 

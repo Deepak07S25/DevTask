@@ -35,7 +35,7 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
     });
 };
 
-const getProjectTasks = async (projectId, sprintId, type) => {
+const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority) => {
     const where = { projectId, deletedAt: null };
     if (sprintId === 'backlog') {
         where.sprintId = null;
@@ -45,12 +45,25 @@ const getProjectTasks = async (projectId, sprintId, type) => {
     if (type) {
         where.type = type;
     }
+    // Advanced filters
+    if (search) {
+        where.OR = [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+        ];
+    }
+    if (assigneeId) {
+        where.assigneeId = assigneeId;
+    }
+    if (priority) {
+        where.priority = priority;
+    }
     return await prisma.task.findMany({
         where,
         include: {
             assignee: { select: { id: true, name: true, email: true } },
             sprint: { select: { id: true, name: true, status: true } },
-            epic: { select: { id: true, title: true } }
+            epic: { select: { id: true, title: true } },
         },
         orderBy: { createdAt: 'desc' }
     });
@@ -89,7 +102,7 @@ const updateTask = async (taskId, updateData, userId) => {
                 activities.push({ taskId, userId, action: newDate ? 'set due date' : 'removed due date', details: newDate ? `to ${newDate.toISOString().split('T')[0]}` : null });
             }
         }
-        
+
         if (updateData.assigneeId !== undefined && updateData.assigneeId !== oldTask.assigneeId) {
             data.assigneeId = updateData.assigneeId || null;
             activities.push({ taskId, userId, action: data.assigneeId ? 'assigned task' : 'unassigned task' });
@@ -99,7 +112,7 @@ const updateTask = async (taskId, updateData, userId) => {
             where: { id: taskId },
             data,
             include: {
-                assignee: { select: { id: true, name: true, email: true } }
+                assignee: { select: { id: true, name: true, email: true } },
             }
         });
 
@@ -117,5 +130,21 @@ const deleteTask = async (taskId) => {
     });
 };
 
+const getMyTasks = async (userId) => {
+    return await prisma.task.findMany({
+        where: { assigneeId: userId, deletedAt: null },
+        include: {
+            project: { select: { id: true, name: true } },
+            epic: { select: { id: true, title: true } },
+            sprint: { select: { id: true, name: true } },
+        },
+        orderBy: [
+            { dueDate: 'asc' },
+            { priority: 'asc' },
+            { createdAt: 'desc' },
+        ]
+    });
+};
+
 // Update your exports
-module.exports = { createTask, getProjectTasks, updateTask, deleteTask };
+module.exports = { createTask, getProjectTasks, getMyTasks, updateTask, deleteTask };

@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createTask,
   getTasks,
+  getMyTasks,
   updateTask,
   deleteTask,
 } = require("../controllers/taskController");
@@ -12,6 +13,7 @@ const activityRoutes = require('./activityRoutes');
 
 router.post("/", protect, createTask);
 router.get("/", protect, getTasks);
+router.get("/my-tasks", protect, getMyTasks);
 router.patch("/:taskId", protect, updateTask);
 router.delete("/:taskId", protect, deleteTask);
 

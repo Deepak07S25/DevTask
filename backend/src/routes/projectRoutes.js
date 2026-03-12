@@ -7,6 +7,7 @@ const {
 } = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
 
+
 // Project CRUD
 router.post('/', protect, createProject);
 router.get('/', protect, getProjects);

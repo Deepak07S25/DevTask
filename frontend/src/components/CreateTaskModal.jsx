@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import API from '../api/axios';
+import MarkdownEditor from './MarkdownEditor';
 
 const DEFAULT_FORM = {
   title: '',
@@ -115,12 +116,11 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
           {/* Description */}
           <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1.5">Description</label>
-            <textarea
-              placeholder="Add more details..."
-              rows="3"
-              className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white focus:border-sky-500 outline-none resize-none placeholder-zinc-600"
+            <MarkdownEditor
               value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
+              onChange={(val) => handleChange('description', val)}
+              placeholder="Add more details... (Markdown supported)"
+              minHeight="120px"
             />
           </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ChevronLeft, Plus, Play, CheckCircle, Trash2,
@@ -11,6 +11,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import CreateSprintModal from "../components/CreateSprintModal";
 import CreateTaskModal from "../components/CreateTaskModal";
 import TaskDetailModal from "../components/TaskDetailModal";
+import FilterBar from "../components/FilterBar";
 
 const PRIORITY_DOT = {
   HIGH: "bg-red-500",
@@ -205,24 +206,35 @@ const Backlog = () => {
   const [project, setProject] = useState(null);
   const [sprints, setSprints] = useState([]);
   const [backlogTasks, setBacklogTasks] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSprintModalOpen, setIsSprintModalOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [filters, setFilters] = useState({ search: "", assigneeId: "", priority: "", type: "" });
+  const debounceRef = useRef(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (activeFilters) => {
     setLoading(true);
     setError(null);
     try {
-      const [projRes, sprintsData, backlogData] = await Promise.all([
+      const backlogParams = new URLSearchParams({ projectId: id, sprintId: "backlog" });
+      if (activeFilters?.search) backlogParams.set("search", activeFilters.search);
+      if (activeFilters?.assigneeId) backlogParams.set("assigneeId", activeFilters.assigneeId);
+      if (activeFilters?.priority) backlogParams.set("priority", activeFilters.priority);
+      if (activeFilters?.type) backlogParams.set("type", activeFilters.type);
+
+      const [projRes, sprintsData, backlogData, membersData] = await Promise.all([
         API.get(`/projects/${id}`),
         sprintApi.getSprints(id),
-        API.get(`/tasks?projectId=${id}&sprintId=backlog`),
+        API.get(`/tasks?${backlogParams.toString()}`),
+        API.get(`/projects/${id}/members`),
       ]);
       setProject(projRes.data);
       setSprints(sprintsData);
       setBacklogTasks(backlogData.data);
+      setMembers(membersData.data);
     } catch {
       setError("Failed to load backlog.");
     } finally {
@@ -230,7 +242,21 @@ const Backlog = () => {
     }
   }, [id]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchData(filters);
+    }, filters.search ? 350 : 0);
+    return () => clearTimeout(debounceRef.current);
+  }, [filters, fetchData]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ search: "", assigneeId: "", priority: "", type: "" });
+  };
 
   const handleSprintCreated = (sprint) => {
     setSprints(prev => [...prev, { ...sprint, tasks: [] }]);
@@ -344,6 +370,14 @@ const Backlog = () => {
           </button>
         </div>
       </div>
+
+      {/* Filter Bar */}
+      <FilterBar
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClear={handleClearFilters}
+        members={members}
+      />
 
       <div className="space-y-4">
         {/* Sprint Sections */}
