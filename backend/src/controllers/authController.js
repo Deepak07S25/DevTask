@@ -22,9 +22,17 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const { user, token } = await authService.loginUser(email, password);
+    
+    // Set HTTP-Only Cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     res.status(200).json({
       message: "Login successful",
-      token,
       user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (error) {
@@ -63,4 +71,14 @@ const changePassword = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-module.exports = { register, login, getMe, changePassword };
+
+const logout = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
+module.exports = { register, login, logout, getMe, changePassword };

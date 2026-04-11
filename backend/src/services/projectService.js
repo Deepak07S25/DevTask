@@ -40,11 +40,7 @@ const getProjectById = async (projectId, userId) => {
 module.exports = { createProject, getUserProjects, getProjectById };
 
 const updateProject = async (projectId, userId, data) => {
-    // Only ADMIN can edit
-    const membership = await prisma.projectMember.findFirst({
-        where: { projectId, userId, role: 'ADMIN' }
-    });
-    if (!membership) throw new Error('Not authorized — must be project ADMIN');
+    // Authorization is now handled by the rbacMiddleware at the routing layer
     return await prisma.project.update({
         where: { id: projectId },
         data: { name: data.name, description: data.description }
@@ -52,10 +48,7 @@ const updateProject = async (projectId, userId, data) => {
 };
 
 const deleteProject = async (projectId, userId) => {
-    const membership = await prisma.projectMember.findFirst({
-        where: { projectId, userId, role: 'ADMIN' }
-    });
-    if (!membership) throw new Error('Not authorized — must be project ADMIN');
+    // Authorization is now handled by the rbacMiddleware at the routing layer
     return await prisma.project.delete({ where: { id: projectId } });
 };
 
@@ -68,10 +61,7 @@ const getMembers = async (projectId) => {
 };
 
 const addMemberByEmail = async (projectId, requesterId, email) => {
-    const requester = await prisma.projectMember.findFirst({
-        where: { projectId, userId: requesterId, role: 'ADMIN' }
-    });
-    if (!requester) throw new Error('Not authorized — must be project ADMIN');
+    // Authorization is now handled by the rbacMiddleware at the routing layer
     const userToAdd = await prisma.user.findUnique({ where: { email } });
     if (!userToAdd) throw new Error(`No user found with email: ${email}`);
     const existing = await prisma.projectMember.findFirst({
@@ -85,10 +75,7 @@ const addMemberByEmail = async (projectId, requesterId, email) => {
 };
 
 const removeMember = async (projectId, requesterId, memberUserId) => {
-    const requester = await prisma.projectMember.findFirst({
-        where: { projectId, userId: requesterId, role: 'ADMIN' }
-    });
-    if (!requester) throw new Error('Not authorized — must be project ADMIN');
+    // Authorization is now handled by the rbacMiddleware at the routing layer
     if (requesterId === memberUserId) throw new Error('Cannot remove yourself as ADMIN');
     const member = await prisma.projectMember.findFirst({
         where: { projectId, userId: memberUserId }

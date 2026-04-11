@@ -5,6 +5,7 @@ const { protect } = require("../middlewares/authMiddleware");
 
 router.post("/register", authController.register);
 router.post("/login", authController.login);
+router.post("/logout", authController.logout);
 router.get("/me", protect, authController.getMe);
 router.patch("/me/password", protect, authController.changePassword);
 
