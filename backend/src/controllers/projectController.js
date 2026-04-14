@@ -12,8 +12,11 @@ const createProject = async (req, res) => {
 
 const getProjects = async (req, res) => {
     try {
-        const projects = await projectService.getUserProjects(req.user);
-        res.status(200).json(projects);
+        const { page, limit } = req.query;
+        const { data, meta } = await projectService.getUserProjects(req.user, page, limit);
+        res.set('X-Total-Count', meta.totalCount);
+        res.set('X-Total-Pages', meta.totalPages);
+        res.status(200).json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -53,8 +56,11 @@ const deleteProject = async (req, res) => {
 const getMembers = async (req, res) => {
     try {
         const { id } = req.params;
-        const members = await projectService.getMembers(id);
-        res.status(200).json(members);
+        const { page, limit } = req.query;
+        const { data, meta } = await projectService.getMembers(id, page, limit);
+        res.set('X-Total-Count', meta.totalCount);
+        res.set('X-Total-Pages', meta.totalPages);
+        res.status(200).json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -18,17 +18,19 @@ const register = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+const env = require("../config/env");
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const { user, token } = await authService.loginUser(email, password);
     
-    // Set HTTP-Only Cookie
+    // Set HTTP-Only Cookie with env awareness
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: env.isProduction, 
+      sameSite: env.isProduction ? "strict" : "lax", // Strict blocks CSRF entirely
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.status(200).json({
@@ -75,8 +77,8 @@ const changePassword = async (req, res) => {
 const logout = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: env.isProduction,
+    sameSite: env.isProduction ? "strict" : "lax",
   });
   res.status(200).json({ message: "Logged out successfully" });
 };

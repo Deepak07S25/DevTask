@@ -16,14 +16,21 @@ const createProject = async (name, description, userId) => {
     });
 };
 
-const getUserProjects = async (userId) => {
-    return await prisma.project.findMany({
-        where: {
-            members: {
-                some: { userId: userId }
-            }
+const getUserProjects = async (userId, page = 1, limit = 1000) => {
+    const where = {
+        members: {
+            some: { userId: userId }
         }
-    });
+    };
+    const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
+    const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
+
+    const [projects, totalCount] = await Promise.all([
+        prisma.project.findMany({ where, take, skip }),
+        prisma.project.count({ where })
+    ]);
+
+    return { data: projects, meta: { totalCount, totalPages: Math.ceil(totalCount / take) } };
 };
 
 const getProjectById = async (projectId, userId) => {
@@ -52,12 +59,23 @@ const deleteProject = async (projectId, userId) => {
     return await prisma.project.delete({ where: { id: projectId } });
 };
 
-const getMembers = async (projectId) => {
-    return await prisma.projectMember.findMany({
-        where: { projectId },
-        include: { user: { select: { id: true, name: true, email: true } } },
-        orderBy: { role: 'asc' }
-    });
+const getMembers = async (projectId, page = 1, limit = 1000) => {
+    const where = { projectId };
+    const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
+    const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
+
+    const [members, totalCount] = await Promise.all([
+        prisma.projectMember.findMany({
+            where,
+            include: { user: { select: { id: true, name: true, email: true } } },
+            orderBy: { role: 'asc' },
+            take,
+            skip
+        }),
+        prisma.projectMember.count({ where })
+    ]);
+
+    return { data: members, meta: { totalCount, totalPages: Math.ceil(totalCount / take) } };
 };
 
 const addMemberByEmail = async (projectId, requesterId, email) => {

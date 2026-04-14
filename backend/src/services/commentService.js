@@ -1,15 +1,25 @@
 const prisma = require('../db/client');
 
-const getComments = async (taskId) => {
-    return await prisma.comment.findMany({
-        where: { taskId },
-        include: {
-            author: {
-                select: { id: true, name: true, email: true }
-            }
-        },
-        orderBy: { createdAt: 'asc' }
-    });
+const getComments = async (taskId, page = 1, limit = 1000) => {
+    const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
+    const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
+
+    const [comments, totalCount] = await Promise.all([
+        prisma.comment.findMany({
+            where: { taskId },
+            include: {
+                author: {
+                    select: { id: true, name: true, email: true }
+                }
+            },
+            orderBy: { createdAt: 'asc' },
+            take,
+            skip
+        }),
+        prisma.comment.count({ where: { taskId } })
+    ]);
+
+    return { data: comments, meta: { totalCount, totalPages: Math.ceil(totalCount / take) } };
 };
 
 const addComment = async (taskId, authorId, body) => {

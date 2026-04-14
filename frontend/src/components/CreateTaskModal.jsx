@@ -92,14 +92,14 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-zinc-800">
+        <div className="flex justify-between items-center p-6 border-b border-zinc-800 shrink-0">
           <h2 className="text-xl font-bold text-white">Add New Task</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white transition"><X size={24} /></button>
+          <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white transition"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {/* Title */}
           <div>
             <label className="block text-xs font-medium text-zinc-400 mb-1.5">Title <span className="text-red-400">*</span></label>

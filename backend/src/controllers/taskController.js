@@ -3,8 +3,11 @@ const taskService = require("../services/taskService");
 const getMyTasks = async (req, res) => {
     try {
         const userId = req.user;
-        const tasks = await taskService.getMyTasks(userId);
-        res.json(tasks);
+        const { page, limit } = req.query;
+        const { data, meta } = await taskService.getMyTasks(userId, page, limit);
+        res.set('X-Total-Count', meta.totalCount);
+        res.set('X-Total-Pages', meta.totalPages);
+        res.json(data); // Crucially returns an array, backwards compatible!
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -32,11 +35,14 @@ const createTask = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
 const getTasks = async (req, res) => {
     try {
-        const { projectId, sprintId, type, search, assigneeId, priority } = req.query;
-        const tasks = await taskService.getProjectTasks(projectId, sprintId, type, search, assigneeId, priority);
-        res.json(tasks);
+        const { projectId, sprintId, type, search, assigneeId, priority, page, limit } = req.query;
+        const { data, meta } = await taskService.getProjectTasks(projectId, sprintId, type, search, assigneeId, priority, page, limit);
+        res.set('X-Total-Count', meta.totalCount);
+        res.set('X-Total-Pages', meta.totalPages);
+        res.json(data);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

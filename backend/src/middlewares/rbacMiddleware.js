@@ -22,7 +22,7 @@ const authorize = (...roles) => {
 // Resource-specific Role Resolver for Projects
 const resolveProjectRole = async (req, res, next) => {
   try {
-    const projectId = req.params.id || req.body.projectId || req.params.projectId;
+    const projectId = req.params?.id || req.body?.projectId || req.params?.projectId || req.query?.projectId;
     // req.user is a string in the current state of protect middleware
     const userId = typeof req.user === 'object' ? req.user.id : req.user;
     

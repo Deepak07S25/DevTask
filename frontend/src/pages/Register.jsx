@@ -86,6 +86,8 @@ const Register = () => {
                   placeholder="name@company.com" 
                   className="w-full pl-11 pr-4 py-4 bg-zinc-950/50 rounded-xl border border-zinc-800 text-white placeholder-zinc-600 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-all duration-300"
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onInvalid={(e) => e.target.setCustomValidity('Please enter valid email')}
+                  onInput={(e) => e.target.setCustomValidity('')}
                   required
                   disabled={isLoading}
                 />

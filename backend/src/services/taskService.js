@@ -35,7 +35,7 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
     });
 };
 
-const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority) => {
+const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority, page = 1, limit = 1000) => {
     const where = { projectId, deletedAt: null };
     if (sprintId === 'backlog') {
         where.sprintId = null;
@@ -48,8 +48,8 @@ const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, pr
     // Advanced filters
     if (search) {
         where.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search } },
+            { description: { contains: search } },
         ];
     }
     if (assigneeId) {
@@ -58,15 +58,26 @@ const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, pr
     if (priority) {
         where.priority = priority;
     }
-    return await prisma.task.findMany({
-        where,
-        include: {
-            assignee: { select: { id: true, name: true, email: true } },
-            sprint: { select: { id: true, name: true, status: true } },
-            epic: { select: { id: true, title: true } },
-        },
-        orderBy: { createdAt: 'desc' }
-    });
+    
+    const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
+    const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
+
+    const [tasks, totalCount] = await Promise.all([
+        prisma.task.findMany({
+            where,
+            include: {
+                assignee: { select: { id: true, name: true, email: true } },
+                sprint: { select: { id: true, name: true, status: true } },
+                epic: { select: { id: true, title: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take,
+            skip
+        }),
+        prisma.task.count({ where })
+    ]);
+
+    return { data: tasks, meta: { totalCount, totalPages: Math.ceil(totalCount / take) } };
 };
 
 const updateTask = async (taskId, updateData, userId) => {
@@ -130,20 +141,31 @@ const deleteTask = async (taskId) => {
     });
 };
 
-const getMyTasks = async (userId) => {
-    return await prisma.task.findMany({
-        where: { assigneeId: userId, deletedAt: null },
-        include: {
-            project: { select: { id: true, name: true } },
-            epic: { select: { id: true, title: true } },
-            sprint: { select: { id: true, name: true } },
-        },
-        orderBy: [
-            { dueDate: 'asc' },
-            { priority: 'asc' },
-            { createdAt: 'desc' },
-        ]
-    });
+const getMyTasks = async (userId, page = 1, limit = 1000) => {
+    const where = { assigneeId: userId, deletedAt: null };
+    const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
+    const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
+
+    const [tasks, totalCount] = await Promise.all([
+        prisma.task.findMany({
+            where,
+            include: {
+                project: { select: { id: true, name: true } },
+                epic: { select: { id: true, title: true } },
+                sprint: { select: { id: true, name: true } },
+            },
+            orderBy: [
+                { dueDate: 'asc' },
+                { priority: 'asc' },
+                { createdAt: 'desc' },
+            ],
+            take,
+            skip
+        }),
+        prisma.task.count({ where })
+    ]);
+
+    return { data: tasks, meta: { totalCount, totalPages: Math.ceil(totalCount / take) } };
 };
 
 // Update your exports
