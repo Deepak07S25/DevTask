@@ -9,7 +9,6 @@ A full-stack task management application with a Kanban board, user authenticatio
 | Frontend | React + Vite |
 | Backend | Node.js + Express |
 | Database | PostgreSQL via Prisma ORM |
-| Containerization | Docker / Docker Compose |
 
 ## Project Structure
 
@@ -18,24 +17,18 @@ Devtask/
 ├── backend/      # Express API server
 │   ├── prisma/   # Database schema & migrations
 │   └── src/      # Routes, controllers, services
-├── frontend/     # React (Vite) SPA
-│   └── src/      # Pages, components, hooks
-└── docker-compose.yml
+└── frontend/     # React (Vite) SPA
+    └── src/      # Pages, components, hooks
 ```
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
-- Docker & Docker Compose (for the database)
-- A `.env` file in `backend/` (see `.env.example`)
+- Active PostgreSQL Database (e.g., Neon)
+- A `.env` file in `backend/`
 
-### 1. Start the database
-```bash
-docker-compose up -d
-```
-
-### 2. Backend
+### 1. Backend
 ```bash
 cd backend
 npm install
@@ -43,7 +36,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-### 3. Frontend
+### 2. Frontend
 ```bash
 cd frontend
 npm install
