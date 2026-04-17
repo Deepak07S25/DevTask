@@ -1,0 +1,21 @@
+<svg id="devtask-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+                <defs>
+                    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#1e3a8a"></stop>
+                        <stop offset="100%" stop-color="#2563eb"></stop>
+                    </linearGradient>
+                    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0d9488"></stop>
+                        <stop offset="100%" stop-color="#14b8a6"></stop>
+                    </linearGradient>
+                    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.1"></feDropShadow>
+                    </filter>
+                </defs>
+                
+                <!-- Blue D Shape -->
+                <path d="M 25 20 L 55 20 C 82 20 100 38 100 60 C 100 82 82 100 55 100 L 25 100 L 25 20 Z M 45 40 L 45 80 L 55 80 C 70 80 80 72 80 60 C 80 48 70 40 55 40 L 45 40 Z" fill="url(#blueGrad)" filter="url(#shadow)"></path>
+                
+                <!-- Teal Checkmark / Arrow -->
+                <path d="M 15 65 L 45 90 L 105 25 L 90 15 L 45 65 L 30 50 Z" fill="url(#tealGrad)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" filter="url(#shadow)"></path>
+            </svg>
