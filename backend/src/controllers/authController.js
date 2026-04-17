@@ -29,7 +29,7 @@ const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: env.isProduction, 
-      sameSite: env.isProduction ? "strict" : "lax", // Strict blocks CSRF entirely
+      sameSite: env.isProduction ? "none" : "lax", // "none" required for cross-domain cookies (Vercel ↔ Render)
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
@@ -78,7 +78,7 @@ const logout = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: env.isProduction,
-    sameSite: env.isProduction ? "strict" : "lax",
+    sameSite: env.isProduction ? "none" : "lax",
   });
   res.status(200).json({ message: "Logged out successfully" });
 };
