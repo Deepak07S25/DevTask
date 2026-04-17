@@ -50,7 +50,7 @@ const FilterBar = ({ filters, onFilterChange, members = [], onClear }) => {
         value={filters.assigneeId}
         onChange={(v) => onFilterChange("assigneeId", v)}
         placeholder="Assignee"
-        options={members.map((m) => ({ label: m.name, value: m.id }))}
+        options={members.map((m) => ({ label: m.user?.name ?? m.name, value: m.user?.id ?? m.id }))}
       />
 
       {/* Priority dropdown */}
