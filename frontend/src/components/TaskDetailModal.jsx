@@ -114,7 +114,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     try {
       const payload = {
         ...formData,
-        dueDate: formData.dueDate || null,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         assigneeId: formData.assigneeId || null,
         epicId: formData.type === 'EPIC' ? null : (formData.epicId || null),
       };
