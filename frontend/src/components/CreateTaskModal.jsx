@@ -71,7 +71,7 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
         ...formData,
         projectId,
         assigneeId: formData.assigneeId || null,
-        dueDate: formData.dueDate || null,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         sprintId: sprintId || null,
         type: formData.type || 'TASK',
         epicId: formData.epicId || null,
