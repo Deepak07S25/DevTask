@@ -10,16 +10,16 @@ const protect = async (req, res, next) => {
 
   let token;
 
-  // 1. Check if the token exists in Cookies
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
-  // 2. Fallback to check if the token exists in the Headers (backward compatibility)
-  else if (
+  // 1. Check if the token exists in the Headers
+  if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  }
+  // 2. Fallback to check if the token exists in Cookies
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
 
   if (token) {

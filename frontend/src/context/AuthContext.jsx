@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (token, userInfo) => {
+    if (token) localStorage.setItem('token', token);
     if (userInfo) localStorage.setItem('user', JSON.stringify(userInfo));
     setUser({ ...userInfo });
   };
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout failed', error);
     }
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
