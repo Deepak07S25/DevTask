@@ -4,101 +4,149 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { LayoutGrid, LogOut, ChevronRight, PanelLeftClose, PanelLeft } from 'lucide-react';
 import API from '../api/axios';
 
-const Avatar = ({ name, size = 'sm' }) => {
-  const initials = name ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '?';
-  const colors = ['bg-sky-600', 'bg-violet-600', 'bg-emerald-600', 'bg-rose-600', 'bg-amber-600'];
-  const color = colors[initials.charCodeAt(0) % colors.length];
-  const dim = size === 'lg' ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-xs';
+/* ── Logo mark SVG ─────────────────────────────────────────────────────── */
+const LogoMark = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <rect x="1" y="1" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.9"/>
+    <rect x="10" y="1" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.55"/>
+    <rect x="1" y="10" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.55"/>
+    <rect x="10" y="10" width="7" height="7" rx="1.5" fill="white" fillOpacity="0.25"/>
+  </svg>
+);
+
+/* ── Avatar ─────────────────────────────────────────────────────────────── */
+const COLORS = ['#3b82f6','#06b6d4','#10b981','#f59e0b','#8b5cf6','#ec4899'];
+const Avatar = ({ name }) => {
+  const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+  const bg = COLORS[initials.charCodeAt(0) % COLORS.length];
   return (
-    <div className={`${dim} rounded-full ${color} flex items-center justify-center font-bold text-white flex-shrink-0`}>
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+      style={{ background: bg }}
+    >
       {initials}
     </div>
   );
 };
 
+/* ── DashboardLayout ─────────────────────────────────────────────────────── */
 const DashboardLayout = ({ children }) => {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
-    API.get('/auth/me')
-      .then((res) => setProfile(res.data))
-      .catch(() => {});
+    API.get('/auth/me').then(r => setProfile(r.data)).catch(() => {});
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const isActive = (path) => location.pathname === path;
+  const isActive = (p) => location.pathname === p;
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Sidebar */}
+    <div className="flex min-h-screen" style={{ background: 'var(--surface-base)', color: 'var(--text-primary)' }}>
+
+      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <aside
-        className={`${sidebarOpen ? 'w-64' : 'w-[72px]'} border-r border-zinc-800 bg-zinc-900/50 p-4 flex flex-col transition-all duration-300 ease-in-out relative flex-shrink-0`}
+        className="flex flex-col shrink-0 relative overflow-hidden transition-[width] duration-[var(--ease-layout)]"
+        style={{
+          width: open ? 'var(--sidebar-w)' : 'var(--sidebar-collapsed)',
+          background: 'var(--surface-raised)',
+          borderRight: '1px solid var(--border)',
+        }}
       >
-        {/* Toggle Button */}
+        {/* Toggle */}
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute -right-3 top-8 bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-full p-1 transition-colors z-10"
-          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          onClick={() => setOpen(!open)}
+          title={open ? 'Collapse' : 'Expand'}
+          className="absolute -right-3 top-6 z-10 w-6 h-6 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-[var(--ease-base)]"
+          style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border)' }}
         >
-          {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeft size={14} />}
+          {open ? <PanelLeftClose size={12} /> : <PanelLeft size={12} />}
         </button>
 
-        {/* Logo */}
-        <Link to="/dashboard" className={`text-2xl font-black text-sky-500 mb-10 block ${sidebarOpen ? 'px-2' : 'text-center text-lg'} transition-all duration-300`}>
-          {sidebarOpen ? 'DevTask' : 'D'}
-        </Link>
+        <div className="flex flex-col flex-1 overflow-hidden p-3 gap-1">
 
-        {/* Nav */}
-        <nav className="flex-1 space-y-1">
+          {/* Logo */}
           <Link
             to="/dashboard"
-            className={`flex items-center gap-3 p-3 rounded-lg font-medium transition ${isActive('/dashboard') ? 'bg-sky-600/15 text-sky-400' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'} ${!sidebarOpen ? 'justify-center' : ''}`}
-            title="Projects"
+            className="flex items-center gap-2.5 px-2 py-2 mb-5 mt-1 transition-all duration-[var(--ease-base)]"
+            style={{ textDecoration: 'none', justifyContent: open ? 'flex-start' : 'center' }}
           >
-            <LayoutGrid size={18} className="flex-shrink-0" />
-            {sidebarOpen && <span>Projects</span>}
-          </Link>
-        </nav>
-
-        {/* Profile at bottom */}
-        <div className="border-t border-zinc-800 pt-4 space-y-1">
-          <Link
-            to="/profile"
-            className={`flex items-center gap-3 p-3 rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white transition group ${!sidebarOpen ? 'justify-center' : ''}`}
-            title={profile?.name || 'Profile'}
-          >
-            {profile ? <Avatar name={profile.name} /> : <div className="w-8 h-8 rounded-full bg-zinc-800 animate-pulse" />}
-            {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">{profile?.name || '...'}</p>
-                <p className="text-[11px] text-zinc-500 truncate">{profile?.email || ''}</p>
-              </div>
+            <div
+              className="w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0"
+              style={{ background: 'var(--accent)', boxShadow: '0 0 12px var(--accent-glow)' }}
+            >
+              <LogoMark />
+            </div>
+            {open && (
+              <span className="text-base font-bold tracking-tight text-[var(--text-primary)]">DevTask</span>
             )}
-            {sidebarOpen && <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition" />}
           </Link>
 
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center gap-3 p-3 text-red-400 hover:bg-red-400/10 rounded-lg transition ${!sidebarOpen ? 'justify-center' : ''}`}
-            title="Logout"
-          >
-            <LogOut size={18} className="flex-shrink-0" />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
+          {/* Nav */}
+          <nav className="flex-1 flex flex-col gap-0.5">
+            <Link
+              to="/dashboard"
+              title="Projects"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-[var(--ease-base)]"
+              style={{
+                justifyContent: open ? 'flex-start' : 'center',
+                textDecoration: 'none',
+                background: isActive('/dashboard') ? 'var(--accent-muted)' : 'transparent',
+                color: isActive('/dashboard') ? 'var(--accent-text)' : 'var(--text-muted)',
+              }}
+              onMouseEnter={e => { if (!isActive('/dashboard')) { e.currentTarget.style.background='var(--surface-overlay)'; e.currentTarget.style.color='var(--text-primary)'; } }}
+              onMouseLeave={e => { if (!isActive('/dashboard')) { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-muted)'; } }}
+            >
+              <LayoutGrid size={16} className="shrink-0" />
+              {open && <span>Projects</span>}
+            </Link>
+          </nav>
+
+          {/* Bottom */}
+          <div className="flex flex-col gap-0.5 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+            {/* Profile */}
+            <Link
+              to="/profile"
+              title={profile?.name || 'Profile'}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] group transition-all duration-[var(--ease-base)]"
+              style={{ justifyContent: open ? 'flex-start' : 'center', textDecoration: 'none', color: 'var(--text-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.background='var(--surface-overlay)'; e.currentTarget.style.color='var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-muted)'; }}
+            >
+              {profile
+                ? <Avatar name={profile.name} />
+                : <div className="w-8 h-8 rounded-full dt-skeleton shrink-0" />
+              }
+              {open && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{profile?.name || '···'}</p>
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">{profile?.email || ''}</p>
+                  </div>
+                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-50 transition-opacity shrink-0" />
+                </>
+              )}
+            </Link>
+
+            {/* Logout */}
+            <button
+              onClick={() => { logout(); navigate('/login'); }}
+              title="Log out"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium text-red-400 hover:bg-[var(--danger-bg)] hover:text-red-300 transition-all duration-[var(--ease-base)] w-full"
+              style={{ justifyContent: open ? 'flex-start' : 'center' }}
+            >
+              <LogOut size={15} className="shrink-0" />
+              {open && <span>Log Out</span>}
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* ── Main ─────────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="max-w-[1280px] mx-auto px-7 py-7">
           {children}
         </div>
       </main>

@@ -1,131 +1,113 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Save, Edit2, Send, MessageSquare, History } from 'lucide-react';
+import { X, Edit2, Save, Trash2, MessageSquare, History, CheckSquare, Bookmark, Bug, Layers } from 'lucide-react';
 import API from '../api/axios';
 import ActivityTimeline from './ActivityTimeline';
 import MarkdownEditor, { MarkdownContent } from './MarkdownEditor';
+import { Badge, StatusBadge } from '../design-system/Badge';
+import { Button } from '../design-system/Button';
+import { IconButton } from '../design-system/IconButton';
+import { CommentThread } from '../features/task-detail/components/CommentThread';
+import { TaskMetaView, TaskMetaEdit } from '../features/task-detail/components/TaskMetaSection';
+import { cn } from '../design-system/utils';
+import { useToast } from '../design-system/Toast';
 
-const PRIORITY_STYLES = {
-  HIGH: 'bg-red-900/50 text-red-400 border-red-800',
-  MEDIUM: 'bg-amber-900/50 text-amber-400 border-amber-800',
-  LOW: 'bg-green-900/50 text-green-400 border-green-800',
-};
-
-const STATUS_LABELS = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  DONE: 'Done',
-};
-
-// Get logged-in user ID from JWT stored in localStorage
+/* ── Helpers ──────────────────────────────────────────────────────────────── */
 const getLoggedInUserId = () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.userId;
-  } catch {
-    return null;
-  }
+    return JSON.parse(atob(token.split('.')[1])).userId;
+  } catch { return null; }
 };
 
-const Avatar = ({ name }) => {
-  const initials = name ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '?';
-  const colors = ['bg-sky-600', 'bg-violet-600', 'bg-emerald-600', 'bg-rose-600', 'bg-amber-600'];
-  const color = colors[initials.charCodeAt(0) % colors.length];
-  return (
-    <div className={`w-7 h-7 rounded-full ${color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
-      {initials}
-    </div>
-  );
+const PRIORITY_VARIANT = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' };
+const TYPE_ICONS = {
+  EPIC:  <Layers size={14} className="text-purple-400" />,
+  STORY: <Bookmark size={14} className="text-emerald-400" />,
+  BUG:   <Bug size={14} className="text-red-400" />,
+  TASK:  <CheckSquare size={14} className="text-sky-400" />,
 };
 
+const TAB_BTN = (active) => cn(
+  'flex items-center gap-1.5 pb-3 text-xs font-semibold border-b-2 transition-all duration-[var(--ease-base)]',
+  active
+    ? 'border-blue-500 text-[var(--text-primary)]'
+    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+);
+
+/* ── Component ────────────────────────────────────────────────────────────── */
 const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, projectId }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing]       = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [activeTab, setActiveTab]       = useState('comments');
+  const { success, error: toastError }  = useToast();
+
   const [formData, setFormData] = useState({
-    title: task?.title || '',
-    description: task?.description || '',
-    type: task?.type || 'TASK',
-    epicId: task?.epicId || '',
-    status: task?.status || 'TODO',
-    priority: task?.priority || 'MEDIUM',
-    dueDate: task?.dueDate ? task.dueDate.split('T')[0] : '',
-    assigneeId: task?.assigneeId || '',
+    title: '', description: '', type: 'TASK', epicId: '',
+    status: 'TODO', priority: 'MEDIUM', dueDate: '', assigneeId: '',
   });
 
-  const [activeTab, setActiveTab] = useState('comments');
-
-  // Members for assignee picker
   const [members, setMembers] = useState([]);
-  const [epics, setEpics] = useState([]);
+  const [epics,   setEpics]   = useState([]);
 
-  // Comments state
-  const [comments, setComments] = useState([]);
+  const [comments,        setComments]        = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [postingComment, setPostingComment] = useState(false);
+  const [newComment,      setNewComment]      = useState('');
+  const [postingComment,  setPostingComment]  = useState(false);
+
   const currentUserId = getLoggedInUserId();
 
   useEffect(() => {
     if (!isOpen || !task) return;
+    
+    const fetchComments = async () => {
+      setCommentsLoading(true);
+      try {
+        const res = await API.get(`/tasks/${task.id}/comments`);
+        setComments(res.data);
+      } catch { /* silent */ } finally { setCommentsLoading(false); }
+    };
+
     setFormData({
-      title: task.title,
-      description: task.description || '',
-      type: task.type || 'TASK',
-      epicId: task.epicId || '',
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
+      title:      task.title,
+      description:task.description || '',
+      type:       task.type || 'TASK',
+      epicId:     task.epicId || '',
+      status:     task.status,
+      priority:   task.priority,
+      dueDate:    task.dueDate ? task.dueDate.split('T')[0] : '',
       assigneeId: task.assigneeId || '',
     });
     setIsEditing(false);
     setConfirmDelete(false);
+    setActiveTab('comments');
     fetchComments();
-    // Fetch members and epics
     if (projectId) {
-      API.get(`/projects/${projectId}/members`)
-        .then((res) => setMembers(res.data))
-        .catch(() => setMembers([]));
-      API.get(`/tasks?projectId=${projectId}&type=EPIC`)
-        .then((res) => setEpics(res.data))
-        .catch(() => setEpics([]));
+      API.get(`/projects/${projectId}/members`).then(r => setMembers(r.data)).catch(() => setMembers([]));
+      API.get(`/tasks?projectId=${projectId}&type=EPIC`).then(r => setEpics(r.data)).catch(() => setEpics([]));
     }
-  }, [task?.id, isOpen]);
-
-  const fetchComments = async () => {
-    setCommentsLoading(true);
-    try {
-      const res = await API.get(`/tasks/${task.id}/comments`);
-      setComments(res.data);
-    } catch {
-      // silently fail
-    } finally {
-      setCommentsLoading(false);
-    }
-  };
+  }, [task, isOpen, projectId]);
 
   if (!isOpen || !task) return null;
 
-  const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field, value) => setFormData(p => ({ ...p, [field]: value }));
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const payload = {
         ...formData,
-        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        dueDate:    formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         assigneeId: formData.assigneeId || null,
-        epicId: formData.type === 'EPIC' ? null : (formData.epicId || null),
+        epicId:     formData.type === 'EPIC' ? null : (formData.epicId || null),
       };
       const res = await API.patch(`/tasks/${task.id}`, payload);
       onTaskUpdated(res.data);
       setIsEditing(false);
-    } catch {
-      alert('Failed to update task');
-    } finally {
-      setLoading(false);
-    }
+      success('Task updated');
+    } catch { toastError('Failed to update task'); }
+    finally { setLoading(false); }
   };
 
   const handleDelete = async () => {
@@ -134,23 +116,16 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
       await API.delete(`/tasks/${task.id}`);
       onTaskDeleted(task.id);
       onClose();
-    } catch {
-      alert('Failed to delete task');
-    } finally {
-      setLoading(false);
-    }
+      success('Task deleted');
+    } catch { toastError('Failed to delete task'); }
+    finally { setLoading(false); }
   };
 
   const handleCancel = () => {
     setFormData({
-      title: task.title,
-      description: task.description || '',
-      type: task.type || 'TASK',
-      epicId: task.epicId || '',
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-      assigneeId: task.assigneeId || '',
+      title: task.title, description: task.description || '', type: task.type || 'TASK',
+      epicId: task.epicId || '', status: task.status, priority: task.priority,
+      dueDate: task.dueDate ? task.dueDate.split('T')[0] : '', assigneeId: task.assigneeId || '',
     });
     setIsEditing(false);
     setConfirmDelete(false);
@@ -162,289 +137,204 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     setPostingComment(true);
     try {
       const res = await API.post(`/tasks/${task.id}/comments`, { body: newComment.trim() });
-      setComments((prev) => [...prev, res.data]);
+      setComments(p => [...p, res.data]);
       setNewComment('');
-    } catch {
-      alert('Failed to post comment');
-    } finally {
-      setPostingComment(false);
-    }
+    } catch { toastError('Failed to post comment'); }
+    finally { setPostingComment(false); }
   };
 
   const handleDeleteComment = async (commentId) => {
     try {
       await API.delete(`/tasks/${task.id}/comments/${commentId}`);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-    } catch {
-      alert('Failed to delete comment');
-    }
-  };
-
-  const formatRelativeTime = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
+      setComments(p => p.filter(c => c.id !== commentId));
+      success('Comment deleted');
+    } catch { toastError('Failed to delete comment'); }
   };
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div
+        className="w-full max-w-3xl flex flex-col rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] overflow-hidden"
+        style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', maxHeight: '90vh' }}
+      >
+        {/* ── TOP HEADER ─────────────────────────────────────────────────── */}
+        <div className="flex items-start gap-4 px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+          {/* Type icon */}
+          <span className="mt-1 shrink-0">{TYPE_ICONS[isEditing ? formData.type : (task.type || 'TASK')]}</span>
 
-        {/* ── Header ── */}
-        <div className="flex justify-between items-center p-5 border-b border-zinc-800 flex-shrink-0">
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${PRIORITY_STYLES[isEditing ? formData.priority : task.priority]}`}>
-            {isEditing ? formData.priority : task.priority}
-          </span>
-          <div className="flex items-center gap-2">
-            {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className="p-2 text-zinc-400 hover:text-sky-400 hover:bg-zinc-800 rounded-lg transition" title="Edit task">
-                <Edit2 size={17} />
-              </button>
+          {/* Title area */}
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <input
+                className="w-full text-lg font-bold bg-transparent outline-none border-b pb-1 transition-colors"
+                style={{
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--accent)',
+                  caretColor: 'var(--accent)',
+                }}
+                value={formData.title}
+                onChange={e => handleChange('title', e.target.value)}
+                autoFocus
+              />
+            ) : (
+              <h2 className="text-lg font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>
+                {task.title}
+              </h2>
             )}
-            <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition">
-              <X size={18} />
-            </button>
+
+            {/* Badges row — shown in view mode */}
+            {!isEditing && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge variant={PRIORITY_VARIANT[task.priority] || 'default'}>{task.priority}</Badge>
+                <StatusBadge status={task.status} />
+                <Badge variant="default">{task.type || 'TASK'}</Badge>
+                {task.epic && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[var(--radius-xs)]"
+                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>
+                    {task.epic.title}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {!isEditing && !confirmDelete && (
+              <Button variant="secondary" size="sm" icon={<Edit2 size={13} />} onClick={() => setIsEditing(true)}>
+                Edit
+              </Button>
+            )}
+            <IconButton icon={<X size={16} />} variant="ghost" size="md" onClick={onClose} label="Close" />
           </div>
         </div>
 
-        {/* ── Scrollable Body ── */}
-        <div className="overflow-y-auto flex-1">
-          <div className="p-6 space-y-5">
+        {/* ── BODY ───────────────────────────────────────────────────────── */}
+        <div className="flex flex-1 overflow-hidden">
 
-            {/* Title */}
-            {isEditing ? (
-              <input
-                className="w-full text-xl font-bold bg-zinc-800 border border-zinc-700 text-white rounded-lg px-3 py-2 focus:border-sky-500 outline-none"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-              />
-            ) : (
-              <h2 className="text-xl font-bold text-white">{task.title}</h2>
-            )}
-
-            {/* Status + Priority selects (edit mode) */}
-            {isEditing && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-500 mb-1.5">Issue Type</label>
-                  <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.type} onChange={(e) => {
-                     handleChange('type', e.target.value);
-                     if (e.target.value === 'EPIC') handleChange('epicId', '');
-                  }}>
-                    <option value="TASK">🟦 Task</option>
-                    <option value="STORY">🟩 Story</option>
-                    <option value="BUG">🟥 Bug</option>
-                    <option value="EPIC">🟪 Epic</option>
-                  </select>
-                </div>
-                {formData.type !== 'EPIC' && (
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-500 mb-1.5">Epic Link</label>
-                    <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.epicId} onChange={(e) => handleChange('epicId', e.target.value)}>
-                      <option value="">— None —</option>
-                      {epics.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-500 mb-1.5">Status</label>
-                  <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.status} onChange={(e) => handleChange('status', e.target.value)}>
-                    <option value="TODO">To Do</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="DONE">Done</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-500 mb-1.5">Priority</label>
-                  <select className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500" value={formData.priority} onChange={(e) => handleChange('priority', e.target.value)}>
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* Properties badge (view mode) */}
-            {!isEditing && (
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-zinc-500">Type:</span>
-                  <span className="text-xs font-bold text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-full">{task.type || 'TASK'}</span>
-                </div>
-                {task.epic && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-zinc-500">Epic:</span>
-                    <span className="text-xs font-bold text-purple-300 bg-purple-900/40 border border-purple-800/50 px-2.5 py-1 rounded-full">{task.epic.title}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-zinc-500">Status:</span>
-                  <span className="text-xs font-bold text-zinc-300 bg-zinc-800 px-2.5 py-1 rounded-full">{STATUS_LABELS[task.status]}</span>
-                </div>
-              </div>
-            )}
+          {/* LEFT — Content */}
+          <div className="flex-1 flex flex-col overflow-y-auto px-6 py-5 gap-6 min-w-0">
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1.5">Description</label>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: 'var(--text-muted)' }}>
+                Description
+              </p>
               {isEditing ? (
                 <MarkdownEditor
                   value={formData.description}
-                  onChange={(val) => handleChange('description', val)}
+                  onChange={val => handleChange('description', val)}
                   placeholder="Add a description... (Markdown supported)"
                   minHeight="140px"
                 />
-              ) : (
-                <div className="min-h-[40px] text-sm">
-                  {task.description ? (
-                    <MarkdownContent content={task.description} />
-                  ) : (
-                    <span className="italic text-zinc-600">No description</span>
-                  )}
+              ) : task.description ? (
+                <div className="text-sm">
+                  <MarkdownContent content={task.description} />
                 </div>
-              )}
-            </div>
-
-            {/* Due Date */}
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1.5">Due Date</label>
-              {isEditing ? (
-                <input type="date" className="p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white focus:border-sky-500 outline-none" value={formData.dueDate} onChange={(e) => handleChange('dueDate', e.target.value)} />
               ) : (
-                <p className={`text-sm font-medium ${task.dueDate ? (new Date(task.dueDate) < new Date() ? 'text-red-400' : 'text-zinc-300') : 'text-zinc-600 italic'}`}>
-                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'No due date'}
+                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>
+                  No description. Click Edit to add one.
                 </p>
               )}
             </div>
 
-            {/* Assignee */}
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1.5">Assignee</label>
-              {isEditing ? (
-                <select
-                  className="w-full p-2.5 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500"
-                  value={formData.assigneeId}
-                  onChange={(e) => handleChange('assigneeId', e.target.value)}
-                >
-                  <option value="">— Unassigned —</option>
-                  {members.map((m) => (
-                    <option key={m.user.id} value={m.user.id}>
-                      {m.user.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {task.assignee ? (
-                    <>
-                      <Avatar name={task.assignee.name} />
-                      <span className="text-sm text-zinc-300 font-medium">{task.assignee.name}</span>
-                    </>
-                  ) : (
-                    <span className="text-sm text-zinc-600 italic">Unassigned</span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* ── Tabs Section ── */}
+            {/* Comments + Activity (view mode only) */}
             {!isEditing && (
-              <div className="pt-2 border-t border-zinc-800">
-                <div className="flex gap-6 mb-4 border-b border-zinc-800">
-                  <button
-                    onClick={() => setActiveTab('comments')}
-                    className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'comments' ? 'border-sky-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                    <MessageSquare size={15} />
-                    Comments <span className="text-xs font-normal bg-zinc-800 px-1.5 py-0.5 rounded-full">{comments.length}</span>
+              <div>
+                {/* Tab Bar */}
+                <div className="flex gap-6 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <button onClick={() => setActiveTab('comments')} className={TAB_BTN(activeTab === 'comments')}>
+                    <MessageSquare size={13} />
+                    Comments
+                    {comments.length > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-[var(--radius-xs)] text-[10px]"
+                        style={{ background: 'var(--surface-subtle)', color: 'var(--text-muted)' }}>
+                        {comments.length}
+                      </span>
+                    )}
                   </button>
-                  <button
-                    onClick={() => setActiveTab('activity')}
-                    className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${activeTab === 'activity' ? 'border-sky-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
-                  >
-                    <History size={15} />
-                    Activity
+                  <button onClick={() => setActiveTab('activity')} className={TAB_BTN(activeTab === 'activity')}>
+                    <History size={13} /> Activity
                   </button>
                 </div>
 
                 {activeTab === 'comments' ? (
-                  <>
-                    <div className="space-y-4 mb-4">
-                      {commentsLoading ? (
-                        <div className="flex justify-center py-4">
-                          <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      ) : comments.length === 0 ? (
-                        <p className="text-zinc-600 text-sm italic text-center py-4">No comments yet. Be the first!</p>
-                      ) : (
-                        comments.map((comment) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <Avatar name={comment.author?.name} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-baseline gap-2 mb-1">
-                                <span className="text-xs font-bold text-zinc-300">{comment.author?.name || 'Unknown'}</span>
-                                <span className="text-[11px] text-zinc-600">{formatRelativeTime(comment.createdAt)}</span>
-                              </div>
-                              <p className="text-sm text-zinc-400 leading-relaxed break-words">{comment.body}</p>
-                            </div>
-                            {comment.author?.id === currentUserId && (
-                              <button onClick={() => handleDeleteComment(comment.id)} className="p-1.5 text-zinc-700 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition flex-shrink-0 self-start" title="Delete comment">
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <form onSubmit={handlePostComment} className="flex gap-2">
-                      <input type="text" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:border-sky-500 outline-none placeholder-zinc-600" />
-                      <button type="submit" disabled={postingComment || !newComment.trim()} className="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition disabled:opacity-40 flex items-center gap-1.5 text-sm font-medium">
-                        <Send size={14} />
-                        {postingComment ? '...' : 'Post'}
-                      </button>
-                    </form>
-                  </>
+                  <CommentThread
+                    comments={comments}
+                    loading={commentsLoading}
+                    currentUserId={currentUserId}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                    onPost={handlePostComment}
+                    onDelete={handleDeleteComment}
+                    posting={postingComment}
+                  />
                 ) : (
                   <ActivityTimeline taskId={task.id} />
                 )}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* ── Footer ── */}
-        <div className="p-5 border-t border-zinc-800 flex-shrink-0">
-          {isEditing ? (
-            <div className="flex gap-3">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 transition font-medium">Cancel</button>
-              <button onClick={handleSave} disabled={loading} className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold transition flex items-center justify-center gap-2 disabled:opacity-50">
-                <Save size={16} />
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          ) : confirmDelete ? (
-            <div className="space-y-3">
-              <p className="text-sm text-zinc-400 text-center">Are you sure? This cannot be undone.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white transition font-medium">Cancel</button>
-                <button onClick={handleDelete} disabled={loading} className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold transition disabled:opacity-50">
-                  {loading ? 'Deleting...' : 'Yes, Delete'}
-                </button>
+            {/* Edit mode footer actions */}
+            {isEditing && (
+              <div className="flex justify-end gap-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                <Button variant="ghost" size="md" onClick={handleCancel} disabled={loading}>Cancel</Button>
+                <Button variant="primary" size="md" loading={loading} icon={!loading ? <Save size={14} /> : undefined} onClick={handleSave}>
+                  {loading ? 'Saving…' : 'Save Changes'}
+                </Button>
               </div>
+            )}
+          </div>
+
+          {/* RIGHT — Metadata panel */}
+          <div
+            className="w-56 shrink-0 flex flex-col overflow-y-auto"
+            style={{ borderLeft: '1px solid var(--border)', background: 'var(--surface-base)' }}
+          >
+            <div className="p-4 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                Details
+              </p>
+
+              {isEditing ? (
+                <TaskMetaEdit formData={formData} onChange={handleChange} members={members} epics={epics} />
+              ) : (
+                <TaskMetaView task={task} />
+              )}
             </div>
-          ) : (
-            <button onClick={() => setConfirmDelete(true)} className="w-full py-2.5 rounded-lg border border-red-900/50 text-red-400 hover:bg-red-900/20 hover:border-red-700 transition font-medium flex items-center justify-center gap-2">
-              <Trash2 size={16} /> Delete Task
-            </button>
-          )}
+
+            {/* Delete section (view mode, not editing) */}
+            {!isEditing && (
+              <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
+                {confirmDelete ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                      This cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)} className="flex-1">No</Button>
+                      <Button variant="danger" size="sm" loading={loading} onClick={handleDelete} className="flex-1">
+                        {loading ? '...' : 'Delete'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="w-full flex items-center justify-center gap-2 text-xs font-medium py-2 rounded-[var(--radius-md)] transition-all duration-[var(--ease-base)]"
+                    style={{ color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--danger-bg)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Trash2 size={13} /> Delete Task
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

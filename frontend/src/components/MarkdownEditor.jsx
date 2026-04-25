@@ -3,69 +3,57 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 /**
- * MarkdownEditor
- * A GitHub-style Write / Preview tab editor for task descriptions.
- *
- * Props:
- *   value      string   — current markdown string
- *   onChange   fn       — (newValue: string) => void
- *   placeholder string
- *   minHeight  string   — e.g. "160px"
+ * MarkdownEditor — Write/Preview tab editor.
+ * Props: value, onChange, placeholder, minHeight
  */
 const MarkdownEditor = ({ value, onChange, placeholder = "Write a description…", minHeight = "160px" }) => {
   const [tab, setTab] = useState("write");
 
   return (
-    <div className="rounded-xl border border-zinc-700 overflow-hidden bg-zinc-900 focus-within:border-sky-600 transition">
-      {/* Tab bar */}
-      <div className="flex items-center border-b border-zinc-800 px-2 pt-1 gap-1">
-        <button
-          type="button"
-          onClick={() => setTab("write")}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition ${
-            tab === "write"
-              ? "text-white bg-zinc-800 border border-b-zinc-800 border-zinc-700"
-              : "text-zinc-500 hover:text-zinc-300"
-          }`}
-        >
-          Write
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("preview")}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition ${
-            tab === "preview"
-              ? "text-white bg-zinc-800 border border-b-zinc-800 border-zinc-700"
-              : "text-zinc-500 hover:text-zinc-300"
-          }`}
-        >
-          Preview
-        </button>
-        <span className="ml-auto text-[10px] text-zinc-600 pr-2">Markdown supported</span>
+    <div
+      className="rounded-[var(--radius-md)] overflow-hidden transition-all duration-[var(--ease-base)]"
+      style={{ border: '1px solid var(--border)', background: 'var(--surface-overlay)' }}
+    >
+      {/* Tab Bar */}
+      <div className="flex items-center px-2 pt-2 gap-1" style={{ borderBottom: '1px solid var(--border)' }}>
+        {['write', 'preview'].map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className="px-3 py-1.5 text-xs font-semibold capitalize rounded-t-[var(--radius-sm)] transition-colors duration-[var(--ease-base)]"
+            style={{
+              color: tab === t ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: tab === t ? 'var(--surface-raised)' : 'transparent',
+            }}
+          >
+            {t}
+          </button>
+        ))}
+        <span className="ml-auto text-[10px] pr-2 tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          Markdown
+        </span>
       </div>
 
-      {/* Write pane */}
+      {/* Write Pane */}
       {tab === "write" && (
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           spellCheck={false}
-          style={{ minHeight }}
-          className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 p-3.5 outline-none resize-y font-mono leading-relaxed"
+          style={{ minHeight, color: 'var(--text-primary)', background: 'transparent' }}
+          className="w-full text-sm p-4 outline-none resize-y font-mono leading-relaxed placeholder-[var(--text-muted)]"
         />
       )}
 
-      {/* Preview pane */}
+      {/* Preview Pane */}
       {tab === "preview" && (
-        <div
-          className="p-3.5 text-sm text-zinc-300 leading-relaxed"
-          style={{ minHeight }}
-        >
+        <div className="p-4" style={{ minHeight }}>
           {value?.trim() ? (
             <MarkdownContent content={value} />
           ) : (
-            <p className="text-zinc-600 italic">Nothing to preview.</p>
+            <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Nothing to preview.</p>
           )}
         </div>
       )}
@@ -74,8 +62,8 @@ const MarkdownEditor = ({ value, onChange, placeholder = "Write a description…
 };
 
 /**
- * MarkdownContent — stateless, renders markdown as styled HTML.
- * Exported separately so it can be used in view mode too.
+ * MarkdownContent — stateless markdown renderer with design-system typography.
+ * Exported separately so it can be used in view mode.
  */
 export const MarkdownContent = ({ content }) => {
   if (!content) return null;
@@ -83,31 +71,31 @@ export const MarkdownContent = ({ content }) => {
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        h1: ({ children }) => <h1 className="text-xl font-bold text-white mb-2 mt-3 border-b border-zinc-700 pb-1">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-lg font-bold text-white mb-2 mt-3">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-base font-semibold text-zinc-200 mb-1.5 mt-2">{children}</h3>,
-        p:  ({ children }) => <p className="mb-2 leading-relaxed text-zinc-300">{children}</p>,
-        ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5 text-zinc-300 pl-2">{children}</ul>,
-        ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5 text-zinc-300 pl-2">{children}</ol>,
-        li: ({ children }) => <li className="text-zinc-300">{children}</li>,
-        strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
-        em:     ({ children }) => <em className="italic text-zinc-300">{children}</em>,
-        a:      ({ href, children }) => (
-          <a href={href} target="_blank" rel="noreferrer" className="text-sky-400 hover:text-sky-300 underline underline-offset-2 transition">
+        h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 pb-2" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>{children}</h1>,
+        h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-4" style={{ color: 'var(--text-primary)' }}>{children}</h2>,
+        h3: ({ children }) => <h3 className="text-sm font-semibold mb-1.5 mt-3" style={{ color: 'var(--text-primary)' }}>{children}</h3>,
+        p:  ({ children }) => <p className="text-sm mb-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{children}</p>,
+        ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-2 text-sm" style={{ color: 'var(--text-secondary)' }}>{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-2 text-sm" style={{ color: 'var(--text-secondary)' }}>{children}</ol>,
+        li: ({ children }) => <li className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{children}</li>,
+        strong: ({ children }) => <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</strong>,
+        em: ({ children }) => <em className="italic" style={{ color: 'var(--text-secondary)' }}>{children}</em>,
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2 transition-colors" style={{ color: 'var(--accent-text)' }}>
             {children}
           </a>
         ),
         code: ({ inline, children }) =>
           inline ? (
-            <code className="bg-zinc-800 text-sky-300 text-[13px] px-1.5 py-0.5 rounded font-mono">{children}</code>
+            <code className="text-[12px] px-1.5 py-0.5 rounded-[var(--radius-xs)] font-mono" style={{ background: 'var(--surface-subtle)', color: 'var(--info)' }}>{children}</code>
           ) : (
-            <code className="block bg-zinc-800 text-green-300 text-[13px] p-3 rounded-lg font-mono whitespace-pre-wrap overflow-x-auto my-2">{children}</code>
+            <code className="block text-[12px] p-4 rounded-[var(--radius-md)] font-mono whitespace-pre-wrap overflow-x-auto my-3 leading-relaxed" style={{ background: 'var(--surface-subtle)', color: 'var(--success)' }}>{children}</code>
           ),
         pre: ({ children }) => <>{children}</>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-sky-600 pl-4 my-2 text-zinc-400 italic">{children}</blockquote>
+          <blockquote className="border-l-4 pl-4 my-3 italic text-sm" style={{ borderColor: 'var(--accent)', color: 'var(--text-muted)' }}>{children}</blockquote>
         ),
-        hr: () => <hr className="border-zinc-700 my-3" />,
+        hr: () => <hr className="my-4" style={{ borderColor: 'var(--border)' }} />,
       }}
     >
       {content}

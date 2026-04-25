@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import API from '../api/axios';
 import MarkdownEditor from './MarkdownEditor';
+import { Modal } from '../design-system/Modal';
+import { Button } from '../design-system/Button';
+import { Input } from '../design-system/Input';
+import { cn } from '../design-system/utils';
 
 const DEFAULT_FORM = {
   title: '',
@@ -13,6 +17,14 @@ const DEFAULT_FORM = {
   assigneeId: '',
   dueDate: '',
 };
+
+const SELECT_BASE = cn(
+  'w-full text-sm bg-[var(--surface-overlay)] text-[var(--text-primary)] px-3.5 py-2.5',
+  'border border-[var(--border)] rounded-[var(--radius-md)] outline-none',
+  'transition-all duration-[var(--ease-base)]',
+  'focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20',
+  'disabled:opacity-50 disabled:cursor-not-allowed appearance-none'
+);
 
 const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }) => {
   const [formData, setFormData] = useState(DEFAULT_FORM);
@@ -88,34 +100,23 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-zinc-800 shrink-0">
-          <h2 className="text-xl font-bold text-white">Add New Task</h2>
-          <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white transition"><X size={24} /></button>
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Add New Task" maxWidth="lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Title */}
+        <Input
+          label={<>Title <span className="text-red-400">*</span></>}
+          id="create-task-title"
+          placeholder="What needs to be done?"
+          value={formData.title}
+          onChange={(e) => handleChange('title', e.target.value)}
+          required
+          disabled={submitting}
+        />
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Title <span className="text-red-400">*</span></label>
-            <input
-              type="text"
-              placeholder="What needs to be done?"
-              required
-              className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white focus:border-sky-500 outline-none placeholder-zinc-600"
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Description</label>
+        {/* Description */}
+        <div>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Description</label>
+          <div className="border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
             <MarkdownEditor
               value={formData.description}
               onChange={(val) => handleChange('description', val)}
@@ -123,84 +124,92 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
               minHeight="120px"
             />
           </div>
+        </div>
 
-          {/* Type + Epic Link */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Issue Type</label>
-              <select
-                className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500"
-                value={formData.type}
-                onChange={(e) => {
-                   handleChange('type', e.target.value);
-                   if (e.target.value === 'EPIC') handleChange('epicId', '');
-                }}
-              >
-                <option value="TASK">🟦 Task</option>
-                <option value="STORY">🟩 Story</option>
-                <option value="BUG">🟥 Bug</option>
-                <option value="EPIC">🟪 Epic</option>
-              </select>
-            </div>
-            {formData.type !== 'EPIC' && (
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                  Epic Link {epicsLoading && <span className="text-zinc-600 ml-1">(...)</span>}
-                </label>
-                <select
-                  className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500 disabled:opacity-50"
-                  value={formData.epicId}
-                  onChange={(e) => handleChange('epicId', e.target.value)}
-                  disabled={epicsLoading}
-                >
-                  <option value="">— None —</option>
-                  {epics.map((e) => (
-                    <option key={e.id} value={e.id}>{e.title}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+        {/* Type + Epic Link */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Issue Type</label>
+            <select
+              className={SELECT_BASE}
+              value={formData.type}
+              onChange={(e) => {
+                 handleChange('type', e.target.value);
+                 if (e.target.value === 'EPIC') handleChange('epicId', '');
+              }}
+              disabled={submitting}
+            >
+              <option value="TASK">Task</option>
+              <option value="STORY">Story</option>
+              <option value="BUG">Bug</option>
+              <option value="EPIC">Epic</option>
+            </select>
+            <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
           </div>
+          {formData.type !== 'EPIC' && (
+            <div className="flex-1 relative">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                Epic Link {epicsLoading && <span className="text-[var(--text-muted)] ml-1">(...)</span>}
+              </label>
+              <select
+                className={SELECT_BASE}
+                value={formData.epicId}
+                onChange={(e) => handleChange('epicId', e.target.value)}
+                disabled={epicsLoading || submitting}
+              >
+                <option value="">— None —</option>
+                {epics.map((e) => (
+                  <option key={e.id} value={e.id}>{e.title}</option>
+                ))}
+              </select>
+              <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
+            </div>
+          )}
+        </div>
 
-          {/* Status + Priority */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Status</label>
-              <select
-                className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500"
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value)}
-              >
-                <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Priority</label>
-              <select
-                className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500"
-                value={formData.priority}
-                onChange={(e) => handleChange('priority', e.target.value)}
-              >
-                <option value="LOW">🟢 Low</option>
-                <option value="MEDIUM">🟡 Medium</option>
-                <option value="HIGH">🔴 High</option>
-              </select>
-            </div>
+        {/* Status + Priority */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Status</label>
+            <select
+              className={SELECT_BASE}
+              value={formData.status}
+              onChange={(e) => handleChange('status', e.target.value)}
+              disabled={submitting}
+            >
+              <option value="TODO">To Do</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="DONE">Done</option>
+            </select>
+            <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
           </div>
+          <div className="flex-1 relative">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Priority</label>
+            <select
+              className={SELECT_BASE}
+              value={formData.priority}
+              onChange={(e) => handleChange('priority', e.target.value)}
+              disabled={submitting}
+            >
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+            <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
+          </div>
+        </div>
 
-          {/* Assignee */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-              Assignee
-              {membersLoading && <span className="ml-2 text-zinc-600">(loading...)</span>}
+        {/* Assignee + Due Date */}
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              Assignee {membersLoading && <span className="text-[var(--text-muted)] ml-1">(...)</span>}
             </label>
             <select
-              className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white outline-none focus:border-sky-500 disabled:opacity-50"
+              className={SELECT_BASE}
               value={formData.assigneeId}
               onChange={(e) => handleChange('assigneeId', e.target.value)}
-              disabled={membersLoading}
+              disabled={membersLoading || submitting}
             >
               <option value="">— Unassigned —</option>
               {members.map((m) => (
@@ -209,33 +218,38 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
                 </option>
               ))}
             </select>
+            <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
           </div>
-
-          {/* Due Date */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Due Date</label>
-            <input
+          <div className="flex-1">
+            <Input
+              label="Due Date"
+              id="create-task-due"
               type="date"
-              className="w-full p-3 bg-zinc-800 rounded-lg border border-zinc-700 text-white focus:border-sky-500 outline-none"
               value={formData.dueDate}
               onChange={(e) => handleChange('dueDate', e.target.value)}
+              disabled={submitting}
             />
           </div>
+        </div>
 
-          {/* Error */}
-          {error && <p className="text-red-400 text-sm bg-red-900/20 border border-red-900/40 rounded-lg px-3 py-2">{error}</p>}
+        {/* Error */}
+        {error && (
+          <div className="text-xs px-3 py-2.5 rounded-[var(--radius-md)] bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger-border)]">
+            {error}
+          </div>
+        )}
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg mt-2 transition disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {submitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : 'Create Task'}
-          </button>
-        </form>
-      </div>
-    </div>
+        {/* Submit */}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" size="md" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" size="md" loading={submitting}>
+            {submitting ? 'Creating...' : 'Create Task'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
 

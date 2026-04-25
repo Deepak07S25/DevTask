@@ -1,18 +1,19 @@
 import { createContext, useState, useEffect } from 'react';
 import API from '../api/axios';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const loading = false;
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser({ ...(storedUser ? JSON.parse(storedUser) : {}) });
-    }
-    setLoading(false);
+    // If we need to validate token, we would do it here.
+    // For now, loading is false immediately as we trust localStorage.
   }, []);
 
   const login = (token, userInfo) => {

@@ -9,27 +9,27 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import { ToastProvider } from "./design-system/Toast";
+import { ConfirmProvider } from "./design-system/Confirm";
+
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-sky-500/30">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/project/:id" element={<ProtectedRoute><Board /></ProtectedRoute>} />
-          <Route path="/project/:id/backlog" element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </div>
+    <ToastProvider>
+      <ConfirmProvider>
+        <Router>
+      <Routes>
+        <Route path="/"                     element={<Home />} />
+        <Route path="/register"             element={<Register />} />
+        <Route path="/login"                element={<Login />} />
+        <Route path="/dashboard"            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/project/:id"          element={<ProtectedRoute><Board /></ProtectedRoute>} />
+        <Route path="/project/:id/backlog"  element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
+        <Route path="/profile"              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="*"                     element={<NotFoundPage />} />
+      </Routes>
     </Router>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }
 

@@ -1,5 +1,4 @@
-@theme {
-  /* This is where you can add custom colors later if needed */
-}
-
-@import "tailwindcss";
+/* DevTask — CSS entry point */
+@import './design-system/tokens.css';
+@import './design-system/globals.css';
+@import 'tailwindcss';

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Pencil, Check, GripVertical } from 'lucide-react';
 import API from '../api/axios';
+import { useToast } from '../design-system/Toast';
+import { useConfirm } from '../design-system/Confirm';
 
 const PRESET_COLORS = [
   '#6b7280', '#3b82f6', '#22c55e', '#f59e0b',
@@ -15,6 +17,8 @@ const BoardSettingsPanel = ({ projectId, columns, onColumnsChanged, onClose }) =
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
+  const { success, error: toastError } = useToast();
+  const confirm = useConfirm();
 
   const refresh = (updated) => {
     setCols(updated);
@@ -30,8 +34,9 @@ const BoardSettingsPanel = ({ projectId, columns, onColumnsChanged, onClose }) =
       refresh(updated);
       setNewName('');
       setNewColor('#6366f1');
+      success('Column added');
     } catch (e) {
-      alert(e.response?.data?.error || 'Failed to add column');
+      toastError(e.response?.data?.error || 'Failed to add column');
     }
     setAdding(false);
   };
@@ -42,21 +47,30 @@ const BoardSettingsPanel = ({ projectId, columns, onColumnsChanged, onClose }) =
       const res = await API.patch(`/projects/${projectId}/columns/${col.id}`, { name: editName.trim(), color: editColor });
       const updated = cols.map((c) => (c.id === col.id ? res.data : c));
       refresh(updated);
+      success('Column updated');
     } catch (e) {
-      alert(e.response?.data?.error || 'Failed to update column');
+      toastError(e.response?.data?.error || 'Failed to update column');
     }
     setEditingId(null);
   };
 
   const handleDelete = async (col) => {
-    if (!window.confirm(`Delete "${col.name}"? Tasks will move to the first column.`)) return;
+    const isConfirmed = await confirm({
+      title: 'Delete Column',
+      message: `Delete "${col.name}"? Tasks will move to the first column.`,
+      confirmText: 'Delete',
+      danger: true
+    });
+    if (!isConfirmed) return;
+    
     const fallback = cols.find((c) => c.id !== col.id);
     try {
       await API.delete(`/projects/${projectId}/columns/${col.id}`, { data: { fallbackColumnId: fallback?.id } });
       const updated = cols.filter((c) => c.id !== col.id);
       refresh(updated);
+      success('Column deleted');
     } catch (e) {
-      alert(e.response?.data?.error || 'Failed to delete column');
+      toastError(e.response?.data?.error || 'Failed to delete column');
     }
   };
 
