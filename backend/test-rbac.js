@@ -53,7 +53,7 @@ async function runTests() {
 
   // 3. Admin creates a project
   console.log("\n[3] Admin creating a project...");
-  const createProj = await makeRequest("/projects", "POST", { name: "RBAC Secure Project", description: "Testing RBAC!" }, adminCookie);
+  const createProj = await makeRequest("/projects", "POST", { key: `RBAC${randomId.toString().substring(0,4)}`, name: "RBAC Secure Project", description: "Testing RBAC!" }, adminCookie);
   if (createProj.status !== 201) return console.error("❌ Failed to create project", createProj.data);
   const projectId = createProj.data.id;
   console.log(`✅ Project created with ID: ${projectId}`);

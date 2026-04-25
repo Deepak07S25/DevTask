@@ -20,9 +20,14 @@ const getProjectSprints = async (projectId) => {
         include: {
             tasks: {
                 include: {
-                    assignee: { select: { id: true, name: true, email: true } }
+                    assignee: { select: { id: true, name: true, email: true } },
+                    labels: { include: { label: true } },
+                    project: { select: { key: true } }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: [
+                    { rank: 'asc' },
+                    { createdAt: 'desc' }
+                ]
             },
             _count: { select: { tasks: true } }
         },
@@ -55,6 +60,11 @@ const deleteSprint = async (sprintId) => {
 };
 
 const addTaskToSprint = async (taskId, sprintId) => {
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    const sprint = await prisma.sprint.findUnique({ where: { id: sprintId } });
+    if (!task || !sprint) throw new Error("Task or Sprint not found");
+    if (task.projectId !== sprint.projectId) throw new Error("Task and Sprint must belong to the same project");
+
     return await prisma.task.update({
         where: { id: taskId },
         data: { sprintId },

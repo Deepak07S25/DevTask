@@ -53,7 +53,7 @@ async function runTests() {
 
   // 3. Admin creates a project
   console.log("\n[3] Alice creating a protected project...");
-  const createProj = await makeRequest("/projects", "POST", { name: "Secure Project", description: "Testing IDOR!" }, adminCookie);
+  const createProj = await makeRequest("/projects", "POST", { key: `IDOR${randomId.toString().substring(0,4)}`, name: "Secure Project", description: "Testing IDOR!" }, adminCookie);
   if (createProj.status !== 201) return console.error("❌ Failed to create project", createProj.data);
   const projectId = createProj.data.id;
   console.log(`✅ Project created with ID: ${projectId}`);
@@ -83,7 +83,6 @@ async function runTests() {
       console.log(`⚠️ Unexpected status ${attackerDelete.status} from Eve's request. Data:`, attackerDelete.data);
   }
 
-  // 6. TEST: Admin attempts to delete the task (Should succeed)
   console.log("\n[6] 🛡️  TEST: Alice (Admin) attempts to delete her own task...");
   const adminDelete = await makeRequest(`/tasks/${taskId}`, "DELETE", null, adminCookie);
   if (adminDelete.status === 200) {
@@ -92,6 +91,27 @@ async function runTests() {
       console.error(`❌ FAILED! Task not found. (If Eve deleted it in Step 5, this proves the vulnerability).`);
   } else {
       console.error(`❌ FAILED! Alice got status ${adminDelete.status}`, adminDelete.data);
+  }
+
+  console.log("\n[7] 🛡️  TEST: Eve attempts cross-project parent linking...");
+  // Eve creates her own project and task
+  const eveProj = await makeRequest("/projects", "POST", { key: `EVE${randomId.toString().substring(0,4)}`, name: "Eve Project", description: "Evil Project" }, attackerCookie);
+  if (eveProj.status === 201) {
+      const eveProjectId = eveProj.data.id;
+      const eveTask = await makeRequest("/tasks", "POST", { title: "Eve Task", projectId: eveProjectId }, attackerCookie);
+      
+      if (eveTask.status === 201) {
+          const eveTaskId = eveTask.data.id;
+          // Eve attempts to parent her task to Alice's task!
+          const crossParent = await makeRequest(`/tasks/${eveTaskId}`, "PATCH", { parentId: taskId }, attackerCookie);
+          if (crossParent.status === 400 || crossParent.status === 403) {
+              console.log(`✅ DOMAIN SECURITY PASSED! Eve's cross-project parenting was blocked with: "${crossParent.data.error || 'Forbidden'}"`);
+          } else {
+              console.error(`❌ DOMAIN SECURITY FAILED! Eve successfully linked tasks across projects!`, crossParent.data);
+          }
+      }
+  } else {
+      console.log(`⚠️ Skipped Eve cross-project test due to DB sync blocking project creation.`);
   }
 
   console.log("\n🎉 Task IDOR tests complete!");

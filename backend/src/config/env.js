@@ -20,7 +20,12 @@ const env = {
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 };
 
-// Strict Mode Enforcements for Production
+// Strict Mode Enforcements
+if (!process.env.DATABASE_URL) {
+    console.error("❌ CRITICAL: DATABASE_URL is missing. Shutting down.");
+    process.exit(1);
+}
+
 if (isProd) {
     if (!process.env.JWT_SECRET) {
         console.error("❌ CRITICAL: JWT_SECRET is missing in production. Shutting down.");

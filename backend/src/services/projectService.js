@@ -1,9 +1,10 @@
 const prisma = require('../db/client');
 
-const createProject = async (name, description, userId) => {
+const createProject = async (key, name, description, userId) => {
     // We use a "Transaction" or nested create to make the creator an ADMIN
     return await prisma.project.create({
         data: {
+            key,
             name,
             description,
             members: {
@@ -16,7 +17,7 @@ const createProject = async (name, description, userId) => {
     });
 };
 
-const getUserProjects = async (userId, page = 1, limit = 1000) => {
+const getUserProjects = async (userId, page = 1, limit = 100) => {
     const where = {
         members: {
             some: { userId: userId }
@@ -59,7 +60,7 @@ const deleteProject = async (projectId, userId) => {
     return await prisma.project.delete({ where: { id: projectId } });
 };
 
-const getMembers = async (projectId, page = 1, limit = 1000) => {
+const getMembers = async (projectId, page = 1, limit = 100) => {
     const where = { projectId };
     const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
     const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;

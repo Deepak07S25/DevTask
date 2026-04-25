@@ -8,8 +8,10 @@
   },
   "scripts": {
     "start": "node server.js",
-    "start:prod": "npx prisma migrate deploy && node server.js",
-    "dev": "nodemon server.js"
+    "start:prod": "node server.js",
+    "dev": "nodemon server.js",
+    "db:sync-plan": "cat scripts/db-reconciliation-plan.md",
+    "db:backfill-keys": "node scripts/backfill-project-keys.js"
   },
   "author": "",
   "license": "ISC",

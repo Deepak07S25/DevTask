@@ -62,4 +62,36 @@ const { errorHandler } = require("./src/middlewares/errorHandler");
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT} in ${env.isProduction ? 'production' : 'development'} mode`));
+
+// --- Startup Hardening & Graceful Shutdown ---
+const shutdown = () => {
+  console.log('\n🛑 Shutting down server gracefully...');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    const prisma = require('./src/db/client');
+    prisma.$disconnect().then(() => {
+      console.log('Database connections closed.');
+      process.exit(0);
+    });
+  });
+
+  // Force close after 10s
+  setTimeout(() => {
+    console.error('⚠️ Forcing shutdown after 10s timeout');
+    process.exit(1);
+  }, 10000).unref();
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+process.on('unhandledRejection', (reason) => {
+    console.error('❌ Unhandled Rejection:', reason);
+    if (env.isProduction) {
+        // In true prod, unhandled rejections should restart the process
+        console.error('Shutting down due to unhandled rejection...');
+        shutdown();
+    }
+});
+

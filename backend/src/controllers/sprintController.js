@@ -9,7 +9,7 @@ const createSprint = async (req, res) => {
         const sprint = await sprintService.createSprint(projectId, name, goal, startDate, endDate);
         res.status(201).json(sprint);
     } catch (err) {
-        res.status(500).json({ message: 'Failed to create sprint', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 
@@ -22,7 +22,7 @@ const getProjectSprints = async (req, res) => {
         const sprints = await sprintService.getProjectSprints(projectId);
         res.json(sprints);
     } catch (err) {
-        res.status(500).json({ message: 'Failed to fetch sprints', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 
@@ -32,7 +32,7 @@ const updateSprint = async (req, res) => {
         const sprint = await sprintService.updateSprint(sprintId, req.body);
         res.json(sprint);
     } catch (err) {
-        res.status(500).json({ message: 'Failed to update sprint', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 
@@ -42,7 +42,7 @@ const deleteSprint = async (req, res) => {
         await sprintService.deleteSprint(sprintId);
         res.json({ message: 'Sprint deleted. Tasks moved to backlog.' });
     } catch (err) {
-        res.status(500).json({ message: 'Failed to delete sprint', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 
@@ -52,7 +52,7 @@ const addTaskToSprint = async (req, res) => {
         const task = await sprintService.addTaskToSprint(taskId, sprintId);
         res.json(task);
     } catch (err) {
-        res.status(500).json({ message: 'Failed to add task to sprint', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 
@@ -62,7 +62,7 @@ const removeTaskFromSprint = async (req, res) => {
         const task = await sprintService.removeTaskFromSprint(taskId);
         res.json(task);
     } catch (err) {
-        res.status(500).json({ message: 'Failed to remove task from sprint', error: err.message });
+        res.status(400).json({ error: err.message });
     }
 };
 

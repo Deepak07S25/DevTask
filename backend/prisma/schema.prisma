@@ -21,14 +21,15 @@ model User {
 
 model Project {
   id          String          @id @default(uuid())
+  key         String          @unique
   name        String
   description String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  deletedAt   DateTime?
   members     ProjectMember[]
   sprints     Sprint[]
   tasks       Task[]
+  labels      Label[]
 }
 
 model ProjectMember {
@@ -46,6 +47,7 @@ model ProjectMember {
 
 model Task {
   id          String         @id @default(uuid())
+  taskNumber  Int
   title       String
   description String?
   status      Status         @default(TODO)
@@ -55,14 +57,18 @@ model Task {
   dueDate     DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  deletedAt   DateTime?
   sprintId    String?
   epicId      String?
+  parentId    String?
   type        IssueType      @default(TASK)
+  rank        Float          @default(0)
   comments    Comment[]
+  labels      TaskLabel[]
   assignee    User?          @relation("AssignedTasks", fields: [assigneeId], references: [id])
   epic        Task?          @relation("EpicTasks", fields: [epicId], references: [id])
   subtasks    Task[]         @relation("EpicTasks")
+  parent      Task?          @relation("SubTasks", fields: [parentId], references: [id])
+  childTasks  Task[]         @relation("SubTasks")
   project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   sprint      Sprint?        @relation(fields: [sprintId], references: [id])
   activities  TaskActivity[]
@@ -72,6 +78,12 @@ model Task {
   @@index([status])
   @@index([sprintId])
   @@index([epicId])
+  @@index([parentId])
+  @@index([projectId, sprintId])
+  @@index([projectId, rank])
+  @@index([projectId, assigneeId])
+  @@index([projectId, status])
+  @@unique([projectId, taskNumber])
 }
 
 model Comment {
@@ -86,6 +98,30 @@ model Comment {
 
   @@index([taskId])
   @@index([authorId])
+}
+
+model Label {
+  id        String      @id @default(uuid())
+  name      String
+  color     String?
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     TaskLabel[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model TaskLabel {
+  id        String   @id @default(uuid())
+  taskId    String
+  labelId   String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label     Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, labelId])
+  @@index([taskId])
+  @@index([labelId])
 }
 
 model Sprint {

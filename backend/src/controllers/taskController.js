@@ -15,7 +15,7 @@ const getMyTasks = async (req, res) => {
 
 const createTask = async (req, res) => {
   try {
-    const { title, description, projectId, assigneeId, status, priority, dueDate, sprintId, type, epicId } = req.body;
+    const { title, description, projectId, assigneeId, status, priority, dueDate, sprintId, type, epicId, parentId, rank, labels } = req.body;
     const userId = req.user;
     const task = await taskService.createTask(
       title,
@@ -28,7 +28,10 @@ const createTask = async (req, res) => {
       userId,
       sprintId,
       type,
-      epicId
+      epicId,
+      parentId,
+      rank,
+      labels
     );
     res.status(201).json(task);
   } catch (error) {

@@ -1,24 +1,71 @@
 const prisma = require('../db/client');
 
-const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId) => {
+const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId, parentId, rank, labels) => {
+    if (assigneeId) {
+        const member = await prisma.projectMember.findFirst({ where: { projectId, userId: assigneeId } });
+        if (!member) throw new Error("Assignee must be a member of the project");
+    }
+    if (sprintId) {
+        const sprint = await prisma.sprint.findUnique({ where: { id: sprintId } });
+        if (!sprint || sprint.projectId !== projectId) throw new Error("Sprint must belong to the same project");
+    }
+    if (epicId) {
+        const epic = await prisma.task.findUnique({ where: { id: epicId, type: 'EPIC' } });
+        if (!epic || epic.projectId !== projectId) throw new Error("Epic must belong to the same project");
+    }
+
+    if (parentId) {
+        const parent = await prisma.task.findUnique({ where: { id: parentId } });
+        if (!parent || parent.projectId !== projectId) throw new Error("Parent task must belong to the same project");
+    }
+
     return await prisma.$transaction(async (tx) => {
+        const maxTask = await tx.task.aggregate({
+            where: { projectId },
+            _max: { taskNumber: true }
+        });
+        const taskNumber = (maxTask._max.taskNumber || 0) + 1;
+
+        const data = {
+            title,
+            description,
+            projectId,
+            assigneeId: assigneeId || null,
+            status: status || 'TODO',
+            priority: priority || 'MEDIUM',
+            dueDate: dueDate ? new Date(dueDate) : null,
+            sprintId: sprintId || null,
+            type: type || 'TASK',
+            epicId: epicId || null,
+            parentId: parentId || null,
+            rank: rank !== undefined ? rank : 0,
+            taskNumber
+        };
+
+        if (labels && labels.length > 0) {
+            data.labels = {
+                create: labels.map(labelName => {
+                    const normalizedName = labelName.trim().toLowerCase();
+                    return {
+                        label: {
+                            connectOrCreate: {
+                                where: { projectId_name: { projectId, name: normalizedName } },
+                                create: { projectId, name: normalizedName }
+                            }
+                        }
+                    };
+                })
+            };
+        }
+
         const task = await tx.task.create({
-            data: {
-                title,
-                description,
-                projectId,
-                assigneeId: assigneeId || null,
-                status: status || 'TODO',
-                priority: priority || 'MEDIUM',
-                dueDate: dueDate ? new Date(dueDate) : null,
-                sprintId: sprintId || null,
-                type: type || 'TASK',
-                epicId: epicId || null,
-            },
+            data,
             include: {
                 assignee: { select: { id: true, name: true, email: true } },
                 sprint: { select: { id: true, name: true, status: true } },
-                epic: { select: { id: true, title: true } }
+                epic: { select: { id: true, title: true } },
+                labels: { include: { label: true } },
+                project: { select: { key: true } }
             }
         });
 
@@ -35,8 +82,8 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
     });
 };
 
-const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority, page = 1, limit = 1000) => {
-    const where = { projectId, deletedAt: null };
+const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority, page = 1, limit = 100) => {
+    const where = { projectId };
     if (sprintId === 'backlog') {
         where.sprintId = null;
     } else if (sprintId) {
@@ -69,8 +116,13 @@ const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, pr
                 assignee: { select: { id: true, name: true, email: true } },
                 sprint: { select: { id: true, name: true, status: true } },
                 epic: { select: { id: true, title: true } },
+                labels: { include: { label: true } },
+                project: { select: { key: true } }
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [
+                { rank: 'asc' },
+                { createdAt: 'desc' }
+            ],
             take,
             skip
         }),
@@ -84,6 +136,11 @@ const updateTask = async (taskId, updateData, userId) => {
     return await prisma.$transaction(async (tx) => {
         const oldTask = await tx.task.findUnique({ where: { id: taskId } });
         if (!oldTask) throw new Error("Task not found");
+
+        if (updateData.assigneeId && updateData.assigneeId !== oldTask.assigneeId) {
+            const member = await tx.projectMember.findFirst({ where: { projectId: oldTask.projectId, userId: updateData.assigneeId } });
+            if (!member) throw new Error("Assignee must be a member of the project");
+        }
 
         const data = {};
         const activities = [];
@@ -119,11 +176,46 @@ const updateTask = async (taskId, updateData, userId) => {
             activities.push({ taskId, userId, action: data.assigneeId ? 'assigned task' : 'unassigned task' });
         }
 
+        if (updateData.parentId !== undefined) {
+            if (updateData.parentId === taskId) throw new Error("Task cannot be its own parent");
+            if (updateData.parentId) {
+                const parent = await tx.task.findUnique({ where: { id: updateData.parentId } });
+                if (!parent || parent.projectId !== oldTask.projectId) throw new Error("Parent task must belong to the same project");
+            }
+            data.parentId = updateData.parentId || null;
+            activities.push({ taskId, userId, action: data.parentId ? 'changed parent task' : 'removed parent task' });
+        }
+        if (updateData.rank !== undefined && updateData.rank !== oldTask.rank) {
+            data.rank = updateData.rank;
+        }
+        
+        if (updateData.labels !== undefined) {
+            await tx.taskLabel.deleteMany({ where: { taskId } });
+            if (updateData.labels.length > 0) {
+                data.labels = {
+                    create: updateData.labels.map(labelName => {
+                        const normalizedName = labelName.trim().toLowerCase();
+                        return {
+                            label: {
+                                connectOrCreate: {
+                                    where: { projectId_name: { projectId: oldTask.projectId, name: normalizedName } },
+                                    create: { projectId: oldTask.projectId, name: normalizedName }
+                                }
+                            }
+                        };
+                    })
+                };
+            }
+            activities.push({ taskId, userId, action: 'updated labels' });
+        }
+
         const task = await tx.task.update({
             where: { id: taskId },
             data,
             include: {
                 assignee: { select: { id: true, name: true, email: true } },
+                labels: { include: { label: true } },
+                project: { select: { key: true } }
             }
         });
 
@@ -141,8 +233,8 @@ const deleteTask = async (taskId) => {
     });
 };
 
-const getMyTasks = async (userId, page = 1, limit = 1000) => {
-    const where = { assigneeId: userId, deletedAt: null };
+const getMyTasks = async (userId, page = 1, limit = 100) => {
+    const where = { assigneeId: userId };
     const take = Math.max(1, Math.min(parseInt(limit, 10) || 100, 100));
     const skip = Math.max(0, (parseInt(page, 10) - 1) * take) || 0;
 
@@ -150,11 +242,13 @@ const getMyTasks = async (userId, page = 1, limit = 1000) => {
         prisma.task.findMany({
             where,
             include: {
-                project: { select: { id: true, name: true } },
+                project: { select: { id: true, name: true, key: true } },
                 epic: { select: { id: true, title: true } },
                 sprint: { select: { id: true, name: true } },
+                labels: { include: { label: true } }
             },
             orderBy: [
+                { rank: 'asc' },
                 { dueDate: 'asc' },
                 { priority: 'asc' },
                 { createdAt: 'desc' },

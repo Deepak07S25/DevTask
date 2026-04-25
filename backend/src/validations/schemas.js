@@ -19,6 +19,7 @@ const changePasswordSchema = z.object({
 
 // --- Project Schemas ---
 const createProjectSchema = z.object({
+  key: z.string().min(2).max(10).regex(/^[A-Z0-9]+$/, "Key must be uppercase alphanumeric"),
   name: z.string().min(1, "Project name is required"),
   description: z.string().optional().nullable(),
 }).strict();
@@ -44,6 +45,9 @@ const createTaskSchema = z.object({
   sprintId: z.string().uuid().optional().nullable(),
   type: z.enum(["EPIC", "STORY", "BUG", "TASK"]).optional(),
   epicId: z.string().uuid().optional().nullable(),
+  parentId: z.string().uuid().optional().nullable(),
+  rank: z.number().optional(),
+  labels: z.array(z.string().min(1)).optional(),
 }).strict();
 
 const updateTaskSchema = createTaskSchema.partial();
