@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Board from "./pages/Board";
 import Backlog from "./pages/Backlog";
 import ProfilePage from "./pages/ProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -25,6 +26,7 @@ function App() {
         <Route path="/project/:id"          element={<ProtectedRoute><Board /></ProtectedRoute>} />
         <Route path="/project/:id/backlog"  element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
         <Route path="/profile"              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/notifications"        element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         <Route path="*"                     element={<NotFoundPage />} />
       </Routes>
     </Router>

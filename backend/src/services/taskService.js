@@ -1,4 +1,5 @@
 const prisma = require('../db/client');
+const { enqueueNotification } = require('../queues/notificationQueue');
 
 const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId, parentId, rank, labels) => {
     if (assigneeId) {
@@ -77,6 +78,19 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
         }
 
         await tx.taskActivity.createMany({ data: activities });
+
+        if (assigneeId && assigneeId !== userId) {
+            await enqueueNotification('TASK_ASSIGNED', {
+                recipientId: assigneeId,
+                actorId: userId,
+                data: {
+                    entityId: task.id,
+                    entityTitle: task.title,
+                    projectId: task.projectId,
+                    link: `/project/${task.projectId}`
+                }
+            });
+        }
 
         return task;
     });
@@ -221,6 +235,30 @@ const updateTask = async (taskId, updateData, userId) => {
 
         if (activities.length > 0) {
             await tx.taskActivity.createMany({ data: activities });
+        }
+
+        if (updateData.assigneeId && updateData.assigneeId !== oldTask.assigneeId && updateData.assigneeId !== userId) {
+            await enqueueNotification('TASK_ASSIGNED', {
+                recipientId: updateData.assigneeId,
+                actorId: userId,
+                data: {
+                    entityId: task.id,
+                    entityTitle: task.title,
+                    projectId: task.projectId,
+                    link: `/project/${task.projectId}`
+                }
+            });
+        } else if (activities.length > 0 && oldTask.assigneeId && oldTask.assigneeId !== userId) {
+            await enqueueNotification('TASK_UPDATED', {
+                recipientId: oldTask.assigneeId,
+                actorId: userId,
+                data: {
+                    entityId: task.id,
+                    entityTitle: task.title,
+                    projectId: task.projectId,
+                    link: `/project/${task.projectId}`
+                }
+            });
         }
 
         return task;

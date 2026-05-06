@@ -17,6 +17,7 @@ model User {
   projects   ProjectMember[]
   tasks      Task[]          @relation("AssignedTasks")
   activities TaskActivity[]
+  notifications Notification[]
 }
 
 model Project {
@@ -182,4 +183,20 @@ enum Priority {
 enum Role {
   ADMIN
   MEMBER
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }

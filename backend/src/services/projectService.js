@@ -1,4 +1,5 @@
 const prisma = require('../db/client');
+const { enqueueNotification } = require('../queues/notificationQueue');
 
 const createProject = async (key, name, description, userId) => {
     // We use a "Transaction" or nested create to make the creator an ADMIN
@@ -87,10 +88,24 @@ const addMemberByEmail = async (projectId, requesterId, email) => {
         where: { projectId, userId: userToAdd.id }
     });
     if (existing) throw new Error('User is already a member of this project');
-    return await prisma.projectMember.create({
+    const project = await prisma.project.findUnique({ where: { id: projectId }});
+    
+    const newMember = await prisma.projectMember.create({
         data: { projectId, userId: userToAdd.id, role: 'MEMBER' },
         include: { user: { select: { id: true, name: true, email: true } } }
     });
+
+    await enqueueNotification('PROJECT_ASSIGNED', {
+        recipientId: userToAdd.id,
+        actorId: requesterId,
+        data: {
+            entityId: project.id,
+            entityTitle: project.name,
+            link: '/dashboard'
+        }
+    });
+
+    return newMember;
 };
 
 const removeMember = async (projectId, requesterId, memberUserId) => {

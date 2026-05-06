@@ -10,6 +10,7 @@ const authRoutes = require("./src/routes/authRoutes"); // This MUST come after d
 const projectRoutes = require("./src/routes/projectRoutes");
 const taskRoutes = require("./src/routes/taskRoutes");
 const sprintRoutes = require("./src/routes/sprintRoutes");
+const notificationRoutes = require("./src/routes/notificationRoutes");
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/sprints", sprintRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Global Error Handler (Must be defined last)
 const { errorHandler } = require("./src/middlewares/errorHandler");
@@ -63,6 +65,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT} in ${env.isProduction ? 'production' : 'development'} mode`));
+
+// Initialize Socket.io on the same HTTP server
+const { initializeSocket } = require("./src/config/socket");
+initializeSocket(server, env.frontendUrl);
 
 // --- Startup Hardening & Graceful Shutdown ---
 const shutdown = () => {
