@@ -31,7 +31,7 @@ export const StatsBar = ({ tasks = [], projectCount = 0 }) => {
   const overdue    = tasks.filter(t => isOverdue(t.dueDate, t.status)).length;
 
   return (
-    <div className="grid grid-cols-4 gap-3 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       <Stat value={inProgress}   label="In Progress" accent />
       <Stat value={dueToday}     label="Due Today" />
       <Stat value={overdue}      label="Overdue" warn />

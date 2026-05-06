@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, LogOut, ChevronRight, PanelLeftClose, PanelLeft, Bell } from 'lucide-react';
+import { LayoutGrid, LogOut, ChevronRight, PanelLeftClose, PanelLeft, Bell, Menu, X } from 'lucide-react';
 import API from '../api/axios';
 import NotificationPanel from '../components/NotificationPanel';
 import { NotificationContext } from '../context/NotificationContext';
@@ -39,33 +39,57 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [open, setOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     API.get('/auth/me').then(r => setProfile(r.data)).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const isActive = (p) => location.pathname === p;
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--surface-base)', color: 'var(--text-primary)' }}>
+    <div className="flex min-h-screen relative" style={{ background: 'var(--surface-base)', color: 'var(--text-primary)' }}>
+
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 md:hidden backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <aside
-        className="flex flex-col shrink-0 relative overflow-hidden transition-[width] duration-[var(--ease-layout)]"
+        className={`
+          fixed md:relative inset-y-0 z-50 flex flex-col shrink-0 overflow-hidden transition-all duration-[var(--ease-layout)]
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
         style={{
           width: open ? 'var(--sidebar-w)' : 'var(--sidebar-collapsed)',
           background: 'var(--surface-raised)',
           borderRight: '1px solid var(--border)',
         }}
       >
-        {/* Toggle */}
+        {/* Toggle Desktop */}
         <button
           onClick={() => setOpen(!open)}
           title={open ? 'Collapse' : 'Expand'}
-          className="absolute -right-3 top-6 z-10 w-6 h-6 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-[var(--ease-base)]"
+          className="hidden md:flex absolute -right-3 top-6 z-10 w-6 h-6 items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-[var(--ease-base)]"
           style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border)' }}
         >
           {open ? <PanelLeftClose size={12} /> : <PanelLeft size={12} />}
+        </button>
+
+        {/* Close Mobile */}
+        <button
+          onClick={() => setMobileMenuOpen(false)}
+          className="absolute right-3 top-4 z-10 md:hidden p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+        >
+          <X size={18} />
         </button>
 
         <div className="flex flex-col flex-1 overflow-hidden p-3 gap-1">
@@ -178,11 +202,29 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       {/* ── Main ─────────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="absolute top-4 right-6 z-40">
+      <main className="flex-1 overflow-y-auto relative min-w-0">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-30" style={{ background: 'var(--surface-raised)', borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileMenuOpen(true)} className="p-1 -ml-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <Menu size={20} />
+            </button>
+            <div className="w-6 h-6 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0" style={{ background: 'var(--accent)' }}>
+              <LogoMark />
+            </div>
+            <span className="text-sm font-bold tracking-tight text-[var(--text-primary)]">DevTask</span>
+          </div>
+          <div>
+            <NotificationPanel />
+          </div>
+        </div>
+
+        {/* Desktop Notification Panel */}
+        <div className="hidden md:block absolute top-4 right-6 z-40">
           <NotificationPanel />
         </div>
-        <div className="max-w-[1280px] mx-auto px-7 py-7 mt-8">
+
+        <div className="max-w-[1280px] mx-auto px-4 md:px-7 py-5 md:py-7 mt-0 md:mt-8">
           {children}
         </div>
       </main>

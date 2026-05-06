@@ -18,10 +18,10 @@ const DashboardSkeleton = () => (
       <div className="space-y-2"><Skeleton width="220px" height="24px" /><Skeleton width="180px" height="14px" /></div>
       <Skeleton width="120px" height="32px" rounded="md" />
     </div>
-    <div className="grid grid-cols-4 gap-3 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       {[1,2,3,4].map(i => <Skeleton key={i} height="68px" rounded="md" />)}
     </div>
-    <div className="grid lg:grid-cols-[1fr_340px] gap-6">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_340px] gap-6">
       <div className="space-y-3">
         <Skeleton height="180px" rounded="lg" />
       </div>
@@ -90,7 +90,7 @@ const Dashboard = () => {
           <StatsBar tasks={myTasks} projectCount={projects.length} />
 
           {/* ── Two-column workspace ────────────────────────────────────── */}
-          <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
+          <div className="flex flex-col lg:grid lg:grid-cols-[1fr_340px] gap-6 items-start">
 
             {/* LEFT — My Work */}
             <div>
