@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevTask Reporting Demo</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --panel: #151b23;
+        --panel-2: #1c2430;
+        --line: #2a3444;
+        --text: #edf2f7;
+        --muted: #93a4b8;
+        --soft: #64748b;
+        --blue: #3b82f6;
+        --green: #22c55e;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --cyan: #22d3ee;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button, select {
+        font: inherit;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      aside {
+        border-right: 1px solid var(--line);
+        background: #111722;
+        padding: 18px 14px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 28px;
+        font-weight: 800;
+      }
+
+      .mark {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3px;
+        width: 30px;
+        height: 30px;
+        padding: 6px;
+        border-radius: 7px;
+        background: var(--blue);
+      }
+
+      .mark span {
+        border-radius: 2px;
+        background: white;
+        opacity: .9;
+      }
+
+      nav {
+        display: grid;
+        gap: 6px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      .nav-item.active {
+        background: rgba(59, 130, 246, .12);
+        color: #93c5fd;
+      }
+
+      main {
+        padding: 30px;
+        max-width: 1320px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 20px;
+        margin-bottom: 14px;
+      }
+
+      .product-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 10px 0 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(360px, 100%);
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--muted);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        margin-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tabs button {
+        border: 0;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        padding: 12px 10px 11px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .tabs button.active {
+        border-color: var(--blue);
+        color: var(--text);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        border: 1px solid rgba(59, 130, 246, .25);
+        border-radius: 5px;
+        background: rgba(59, 130, 246, .12);
+        color: #93c5fd;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 10px 0 4px;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      select, .button, .segmented {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 8px;
+        min-height: 38px;
+      }
+
+      select {
+        padding: 0 12px;
+      }
+
+      .segmented {
+        display: flex;
+        padding: 4px;
+      }
+
+      .segmented button {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+
+      .segmented button.active {
+        background: rgba(59, 130, 246, .14);
+        color: #93c5fd;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        cursor: pointer;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .stat, .card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 10px;
+      }
+
+      .stat {
+        padding: 16px;
+      }
+
+      .stat small {
+        color: var(--muted);
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 30px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+        gap: 18px;
+      }
+
+      .portfolio-grid {
+        display: grid;
+        grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .card-header p {
+        margin-top: 3px;
+        font-size: 12px;
+      }
+
+      .workload {
+        display: grid;
+        gap: 12px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 82px minmax(0, 1fr) 42px;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .bar {
+        display: flex;
+        height: 24px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: var(--panel-2);
+      }
+
+      .bar span {
+        min-width: 2px;
+      }
+
+      .done { background: var(--green); }
+      .open { background: var(--blue); }
+      .late { background: var(--red); }
+
+      .split {
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr);
+        gap: 20px;
+        align-items: center;
+      }
+
+      .donut {
+        width: 178px;
+        height: 178px;
+        border-radius: 50%;
+        background: conic-gradient(var(--green) 0 42%, var(--blue) 42% 71%, var(--soft) 71% 100%);
+        display: grid;
+        place-items: center;
+        margin: auto;
+      }
+
+      .donut::after {
+        content: "42%";
+        width: 108px;
+        height: 108px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--panel);
+        color: var(--green);
+        font-size: 26px;
+        font-weight: 900;
+      }
+
+      .legend {
+        display: grid;
+        gap: 8px;
+      }
+
+      .legend div, .risk-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-radius: 7px;
+        background: var(--panel-2);
+        padding: 10px 12px;
+        color: var(--muted);
+      }
+
+      .dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+
+      .priority {
+        display: grid;
+        gap: 14px;
+      }
+
+      .priority-track {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--panel-2);
+      }
+
+      .priority-fill {
+        height: 100%;
+        border-radius: inherit;
+      }
+
+      .trend {
+        width: 100%;
+        height: 245px;
+      }
+
+      .risk-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .risk-item {
+        align-items: start;
+      }
+
+      .risk-item strong {
+        display: block;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .pill {
+        flex: 0 0 auto;
+        border: 1px solid rgba(245, 158, 11, .3);
+        border-radius: 4px;
+        padding: 3px 7px;
+        color: var(--amber);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .confidence {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        gap: 20px;
+        align-items: center;
+      }
+
+      .score-ring {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: conic-gradient(var(--green) 0 78%, var(--panel-2) 78% 100%);
+        position: relative;
+      }
+
+      .score-ring::after {
+        content: "";
+        position: absolute;
+        inset: 18px;
+        border-radius: 50%;
+        background: var(--panel);
+      }
+
+      .score-ring strong {
+        position: relative;
+        z-index: 1;
+        color: var(--green);
+        font-size: 34px;
+      }
+
+      .signals {
+        display: grid;
+        gap: 10px;
+      }
+
+      .signal {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-2);
+      }
+
+      .signal span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+
+      .phase {
+        min-height: 90px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-2);
+      }
+
+      .phase strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .phase span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .heatmap {
+        display: grid;
+        grid-template-columns: 90px repeat(3, 1fr);
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .heatmap div {
+        min-height: 54px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        color: var(--text);
+        font-weight: 800;
+        font-size: 13px;
+      }
+
+      .heat-label {
+        justify-content: start;
+        place-items: center start !important;
+        color: var(--muted) !important;
+        font-weight: 600 !important;
+      }
+
+      .h-low { background: rgba(34, 197, 94, .14); border: 1px solid rgba(34, 197, 94, .24); }
+      .h-mid { background: rgba(245, 158, 11, .16); border: 1px solid rgba(245, 158, 11, .28); }
+      .h-high { background: rgba(239, 68, 68, .15); border: 1px solid rgba(239, 68, 68, .28); }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        font-size: 13px;
+      }
+
+      th, td {
+        padding: 12px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+      }
+
+      td {
+        color: var(--text);
+      }
+
+      .assignee {
+        display: inline-grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #334155;
+        color: white;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .wide-card {
+        grid-column: 1 / -1;
+      }
+
+      @media (max-width: 980px) {
+        .shell { grid-template-columns: 1fr; }
+        aside { display: none; }
+        main { padding: 20px; }
+        .topbar { align-items: stretch; flex-direction: column; }
+        .controls { justify-content: flex-start; }
+        .stats, .grid, .portfolio-grid { grid-template-columns: 1fr 1fr; }
+        .grid, .portfolio-grid { grid-template-columns: 1fr; }
+        .product-bar { align-items: stretch; flex-direction: column; }
+      }
+
+      @media (max-width: 640px) {
+        .stats { grid-template-columns: 1fr 1fr; }
+        .split, .confidence { grid-template-columns: 1fr; }
+        .timeline { grid-template-columns: 1fr 1fr; }
+        .heatmap { grid-template-columns: 72px repeat(3, 1fr); }
+        .bar-row { grid-template-columns: 58px minmax(0, 1fr) 34px; }
+        table { min-width: 680px; }
+        .table-wrap { overflow-x: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <div class="brand">
+          <div class="mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          DevTask
+        </div>
+        <nav>
+          <a class="nav-item" href="#">▦ Projects</a>
+          <a class="nav-item" href="#">☰ Notifications</a>
+          <a class="nav-item active" href="#">▥ Reports</a>
+        </nav>
+      </aside>
+
+      <main>
+        <section class="product-bar" aria-label="Workspace context">
+          <span>DevTask / Portfolio / Q2 delivery intelligence</span>
+          <div class="search">⌕ Search reports, projects, epics, or assignees</div>
+        </section>
+
+        <section class="topbar">
+          <div>
+            <span class="eyebrow">Portfolio Command Center</span>
+            <h1>Plan, measure, and de-risk delivery</h1>
+            <p>Executive reporting, sprint intelligence, and issue-level diagnostics designed for teams outgrowing Jira clutter.</p>
+          </div>
+          <div class="controls">
+            <select aria-label="Project">
+              <option>All projects</option>
+              <option>Website Redesign</option>
+              <option>Mobile App</option>
+              <option>API Platform</option>
+            </select>
+            <div class="segmented" aria-label="Date range">
+              <button>7d</button>
+              <button class="active">30d</button>
+              <button>90d</button>
+            </div>
+            <button class="button" type="button">↓ CSV</button>
+          </div>
+        </section>
+
+        <section class="tabs" aria-label="Report views">
+          <button class="active">Overview</button>
+          <button>Release confidence</button>
+          <button>Team capacity</button>
+          <button>Cycle time</button>
+          <button>Risk register</button>
+          <button>Custom report builder</button>
+        </section>
+
+        <section class="stats" aria-label="Report summary">
+          <div class="stat"><small>Delivery confidence</small><strong style="color: var(--green)">78%</strong><span>Q2 release on track</span></div>
+          <div class="stat"><small>Committed scope</small><strong style="color: var(--blue)">126</strong><span>74 still open</span></div>
+          <div class="stat"><small>Blocked work</small><strong style="color: var(--amber)">12</strong><span>5 waiting on review</span></div>
+          <div class="stat"><small>Escalation risk</small><strong style="color: var(--red)">7</strong><span>Open tasks past due</span></div>
+        </section>
+
+        <section class="grid">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Project workload</h2>
+                <p>Open, done, and overdue tasks by project</p>
+              </div>
+            </div>
+            <div class="workload">
+              <div class="bar-row"><span>WEB</span><div class="bar"><span class="open" style="width: 46%"></span><span class="done" style="width: 41%"></span><span class="late" style="width: 13%"></span></div><strong>39</strong></div>
+              <div class="bar-row"><span>APP</span><div class="bar"><span class="open" style="width: 54%"></span><span class="done" style="width: 38%"></span><span class="late" style="width: 8%"></span></div><strong>48</strong></div>
+              <div class="bar-row"><span>API</span><div class="bar"><span class="open" style="width: 37%"></span><span class="done" style="width: 58%"></span><span class="late" style="width: 5%"></span></div><strong>28</strong></div>
+              <div class="bar-row"><span>OPS</span><div class="bar"><span class="open" style="width: 62%"></span><span class="done" style="width: 30%"></span><span class="late" style="width: 8%"></span></div><strong>11</strong></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Status mix</h2>
+                <p>Current task distribution</p>
+              </div>
+            </div>
+            <div class="split">
+              <div class="donut" aria-label="42 percent complete"></div>
+              <div class="legend">
+                <div><span><span class="dot" style="background: var(--green)"></span>Done</span><strong>52</strong></div>
+                <div><span><span class="dot" style="background: var(--blue)"></span>In progress</span><strong>37</strong></div>
+                <div><span><span class="dot" style="background: var(--soft)"></span>To do</span><strong>37</strong></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Throughput trend</h2>
+                <p>Created vs completed tasks over the last 30 days</p>
+              </div>
+            </div>
+            <svg class="trend" viewBox="0 0 700 245" role="img" aria-label="Throughput trend chart">
+              <line x1="36" y1="204" x2="680" y2="204" stroke="#2a3444" />
+              <line x1="36" y1="148" x2="680" y2="148" stroke="#2a3444" />
+              <line x1="36" y1="92" x2="680" y2="92" stroke="#2a3444" />
+              <path d="M38 182 C95 160, 120 118, 170 130 S250 190, 310 142 S410 100, 470 116 S580 72, 674 84" fill="none" stroke="#3b82f6" stroke-width="4" />
+              <path d="M38 196 C96 188, 130 170, 178 176 S252 150, 320 154 S414 126, 478 132 S580 118, 674 96" fill="none" stroke="#22c55e" stroke-width="4" />
+              <circle cx="674" cy="84" r="5" fill="#3b82f6" />
+              <circle cx="674" cy="96" r="5" fill="#22c55e" />
+              <text x="38" y="232" fill="#64748b" font-size="12">May 1</text>
+              <text x="610" y="232" fill="#64748b" font-size="12">May 30</text>
+              <text x="548" y="78" fill="#93c5fd" font-size="12">Created</text>
+              <text x="548" y="112" fill="#86efac" font-size="12">Done</text>
+            </svg>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Priority focus</h2>
+                <p>Where attention is concentrated</p>
+              </div>
+            </div>
+            <div class="priority">
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 36px"><span>High</span><strong>31</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 64%; background: var(--red)"></div></div>
+              </div>
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 36px"><span>Medium</span><strong>67</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 100%; background: var(--amber)"></div></div>
+              </div>
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 36px"><span>Low</span><strong>28</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 42%; background: var(--green)"></div></div>
+              </div>
+            </div>
+
+            <div style="height: 20px"></div>
+            <div class="card-header" style="margin-bottom: 10px">
+              <div>
+                <h2>Risk queue</h2>
+                <p>Overdue or high-priority tasks</p>
+              </div>
+            </div>
+            <div class="risk-list">
+              <div class="risk-item"><div><strong>Finalize pricing table</strong><p>WEB · Due 2026-05-08</p></div><span class="pill">HIGH</span></div>
+              <div class="risk-item"><div><strong>Fix notification retries</strong><p>API · Due 2026-05-09</p></div><span class="pill">HIGH</span></div>
+              <div class="risk-item"><div><strong>QA mobile onboarding</strong><p>APP · Overdue</p></div><span class="pill" style="color: var(--red); border-color: rgba(239,68,68,.3)">LATE</span></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="portfolio-grid">
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Release confidence</h2>
+                <p>Forecast based on scope burnup, blockers, and overdue work</p>
+              </div>
+              <span class="pill" style="color: var(--green); border-color: rgba(34,197,94,.3)">ON TRACK</span>
+            </div>
+            <div class="confidence">
+              <div class="score-ring"><strong>78</strong></div>
+              <div class="signals">
+                <div class="signal"><span>Scope completed</span><strong>52 / 126</strong></div>
+                <div class="signal"><span>Average cycle time</span><strong>3.8 days</strong></div>
+                <div class="signal"><span>Predicted finish</span><strong>May 29</strong></div>
+                <div class="signal"><span>Confidence change</span><strong style="color: var(--green)">+9%</strong></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Milestone timeline</h2>
+                <p>Release phases with live health signals</p>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="phase" style="border-color: rgba(34,197,94,.28)"><strong>Discovery</strong><span>Complete · 18 issues closed</span></div>
+              <div class="phase" style="border-color: rgba(59,130,246,.28)"><strong>Build</strong><span>Active · 41 issues open</span></div>
+              <div class="phase" style="border-color: rgba(245,158,11,.32)"><strong>Hardening</strong><span>At risk · QA queue growing</span></div>
+              <div class="phase"><strong>Launch</strong><span>Planned · May 31</span></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Issue health matrix</h2>
+                <p>Priority and status concentration</p>
+              </div>
+            </div>
+            <div class="heatmap" aria-label="Issue health matrix">
+              <div></div><div class="heat-label">To do</div><div class="heat-label">In progress</div><div class="heat-label">Done</div>
+              <div class="heat-label">High</div><div class="h-high">14</div><div class="h-high">12</div><div class="h-mid">5</div>
+              <div class="heat-label">Medium</div><div class="h-mid">18</div><div class="h-mid">22</div><div class="h-low">27</div>
+              <div class="heat-label">Low</div><div class="h-low">5</div><div class="h-low">3</div><div class="h-low">20</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div>
+                <h2>Team capacity</h2>
+                <p>Workload balance by owner</p>
+              </div>
+            </div>
+            <div class="priority">
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 52px"><span>Deepak Singh</span><strong>92%</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 92%; background: var(--red)"></div></div>
+              </div>
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 52px"><span>Priya Mehta</span><strong>76%</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 76%; background: var(--amber)"></div></div>
+              </div>
+              <div>
+                <div class="bar-row" style="grid-template-columns: 1fr 52px"><span>Arjun Rao</span><strong>61%</strong></div>
+                <div class="priority-track"><div class="priority-fill" style="width: 61%; background: var(--green)"></div></div>
+              </div>
+              <div class="signal"><span>Recommendation</span><strong>Move 4 API tasks</strong></div>
+            </div>
+          </article>
+
+          <article class="card wide-card">
+            <div class="card-header">
+              <div>
+                <h2>Portfolio drill-down</h2>
+                <p>Issue-level visibility without leaving the report</p>
+              </div>
+              <button class="button" type="button">Configure columns</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Issue</th>
+                    <th>Project</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Signal</th>
+                    <th>Due</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>WEB-184 Pricing table final pass</td>
+                    <td>Website Redesign</td>
+                    <td><span class="assignee">DS</span></td>
+                    <td>In progress</td>
+                    <td><span class="pill" style="color: var(--red); border-color: rgba(239,68,68,.3)">High</span></td>
+                    <td>Design review overdue</td>
+                    <td>May 08</td>
+                  </tr>
+                  <tr>
+                    <td>API-091 Notification retry worker</td>
+                    <td>API Platform</td>
+                    <td><span class="assignee">PM</span></td>
+                    <td>To do</td>
+                    <td><span class="pill">High</span></td>
+                    <td>Dependency on auth events</td>
+                    <td>May 09</td>
+                  </tr>
+                  <tr>
+                    <td>APP-236 Mobile onboarding QA</td>
+                    <td>Mobile App</td>
+                    <td><span class="assignee">AR</span></td>
+                    <td>In progress</td>
+                    <td>Medium</td>
+                    <td>Blocking release candidate</td>
+                    <td>Overdue</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

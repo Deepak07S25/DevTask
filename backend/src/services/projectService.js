@@ -13,6 +13,13 @@ const createProject = async (key, name, description, userId) => {
                     userId: userId,
                     role: 'ADMIN' // The creator is the boss
                 }
+            },
+            boardColumns: {
+                create: [
+                    { name: 'To Do', color: '#6b7280', order: 0 },
+                    { name: 'In Progress', color: '#3b82f6', order: 1 },
+                    { name: 'Done', color: '#22c55e', order: 2 }
+                ]
             }
         }
     });
@@ -50,9 +57,13 @@ module.exports = { createProject, getUserProjects, getProjectById };
 
 const updateProject = async (projectId, userId, data) => {
     // Authorization is now handled by the rbacMiddleware at the routing layer
+    const updateData = { name: data.name, description: data.description };
+    if (data.columns) {
+        updateData.columns = data.columns;
+    }
     return await prisma.project.update({
         where: { id: projectId },
-        data: { name: data.name, description: data.description }
+        data: updateData
     });
 };
 

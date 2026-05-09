@@ -18,19 +18,33 @@ const createColumn = async (projectId, name, color) => {
 };
 
 const updateColumn = async (columnId, data) => {
-    return await prisma.boardColumn.update({
+    const existing = await prisma.boardColumn.findUnique({ where: { id: columnId } });
+    const updated = await prisma.boardColumn.update({
         where: { id: columnId },
         data,
     });
+    // If name changed, update tasks status
+    if (data.name && existing.name !== data.name) {
+        await prisma.task.updateMany({
+            where: { status: existing.name, projectId: existing.projectId },
+            data: { status: data.name },
+        });
+    }
+    return updated;
 };
 
 const deleteColumn = async (columnId, fallbackColumnId) => {
-    // Move all tasks in this column to the fallback column before deleting
+    const columnToDelete = await prisma.boardColumn.findUnique({ where: { id: columnId } });
+    if (!columnToDelete) return;
+
     if (fallbackColumnId) {
-        await prisma.task.updateMany({
-            where: { columnId },
-            data: { columnId: fallbackColumnId },
-        });
+        const fallbackColumn = await prisma.boardColumn.findUnique({ where: { id: fallbackColumnId } });
+        if (fallbackColumn) {
+            await prisma.task.updateMany({
+                where: { status: columnToDelete.name, projectId: columnToDelete.projectId },
+                data: { status: fallbackColumn.name },
+            });
+        }
     }
     return await prisma.boardColumn.delete({ where: { id: columnId } });
 };

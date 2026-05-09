@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Plus, List, Users, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Plus, List, Users, ChevronDown, CheckCircle2, Settings } from 'lucide-react';
 import { Button } from '../../../design-system/Button';
 import { cn } from '../../../design-system/utils';
 import { useState, useRef, useEffect } from 'react';
@@ -11,7 +11,8 @@ export const BoardHeader = ({
   activeSprint, 
   onSprintSelect, 
   onOpenMembers, 
-  onOpenCreateTask 
+  onOpenCreateTask,
+  onOpenSettings
 }) => {
   const [isSprintDropOpen, setIsSprintDropOpen] = useState(false);
   const sprintMenuRef = useRef(null);
@@ -107,6 +108,16 @@ export const BoardHeader = ({
           onClick={onOpenMembers}
         >
           Team
+        </Button>
+
+        {/* Settings Action */}
+        <Button
+          variant="secondary"
+          size="md"
+          icon={<Settings size={15} />}
+          onClick={onOpenSettings}
+        >
+          Settings
         </Button>
 
         {/* Primary Action */}

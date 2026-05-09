@@ -50,6 +50,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
 
   const [members, setMembers] = useState([]);
   const [epics,   setEpics]   = useState([]);
+  const [columns, setColumns] = useState([]);
 
   const [comments,        setComments]        = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -86,6 +87,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     if (projectId) {
       API.get(`/projects/${projectId}/members`).then(r => setMembers(r.data)).catch(() => setMembers([]));
       API.get(`/tasks?projectId=${projectId}&type=EPIC`).then(r => setEpics(r.data)).catch(() => setEpics([]));
+      API.get(`/projects/${projectId}/columns`).then(r => setColumns(r.data)).catch(() => setColumns([]));
     }
   }, [task, isOpen, projectId]);
 
@@ -300,7 +302,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
               </p>
 
               {isEditing ? (
-                <TaskMetaEdit formData={formData} onChange={handleChange} members={members} epics={epics} />
+                <TaskMetaEdit formData={formData} onChange={handleChange} members={members} epics={epics} columns={columns} />
               ) : (
                 <TaskMetaView task={task} />
               )}

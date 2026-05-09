@@ -77,7 +77,7 @@ export const TaskMetaView = ({ task }) => {
 };
 
 /** EDIT MODE — select fields for all mutable metadata */
-export const TaskMetaEdit = ({ formData, onChange, members, epics }) => (
+export const TaskMetaEdit = ({ formData, onChange, members, epics, columns = [] }) => (
   <div className="space-y-3">
     {/* Type */}
     <div>
@@ -99,9 +99,11 @@ export const TaskMetaEdit = ({ formData, onChange, members, epics }) => (
       <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Status</label>
       <div className="relative">
         <select className={SELECT} value={formData.status} onChange={e => onChange('status', e.target.value)}>
-          <option value="TODO">To Do</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="DONE">Done</option>
+          {columns.length > 0 ? columns.map(col => (
+            <option key={col.id} value={col.name}>{col.name}</option>
+          )) : (
+            <option value={formData.status}>{formData.status}</option>
+          )}
         </select>
         <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[10px]" style={{ color: 'var(--text-muted)' }}>▼</span>
       </div>

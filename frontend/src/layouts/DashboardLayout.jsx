@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, LogOut, ChevronRight, PanelLeftClose, PanelLeft, Bell, Menu, X } from 'lucide-react';
+import { LayoutGrid, LogOut, ChevronRight, PanelLeftClose, PanelLeft, Bell, Menu, X, BarChart3 } from 'lucide-react';
 import API from '../api/axios';
 import NotificationPanel from '../components/NotificationPanel';
 import { NotificationContext } from '../context/NotificationContext';
@@ -45,11 +45,8 @@ const DashboardLayout = ({ children }) => {
     API.get('/auth/me').then(r => setProfile(r.data)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
   const isActive = (p) => location.pathname === p;
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
     <div className="flex min-h-screen relative" style={{ background: 'var(--surface-base)', color: 'var(--text-primary)' }}>
@@ -97,6 +94,7 @@ const DashboardLayout = ({ children }) => {
           {/* Logo */}
           <Link
             to="/dashboard"
+            onClick={closeMobileMenu}
             className="flex items-center gap-2.5 px-2 py-2 mb-5 mt-1 transition-all duration-[var(--ease-base)]"
             style={{ textDecoration: 'none', justifyContent: open ? 'flex-start' : 'center' }}
           >
@@ -116,6 +114,7 @@ const DashboardLayout = ({ children }) => {
             <Link
               to="/dashboard"
               title="Projects"
+              onClick={closeMobileMenu}
               className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-[var(--ease-base)]"
               style={{
                 justifyContent: open ? 'flex-start' : 'center',
@@ -133,6 +132,7 @@ const DashboardLayout = ({ children }) => {
             <Link
               to="/notifications"
               title="Notifications"
+              onClick={closeMobileMenu}
               className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-[var(--ease-base)]"
               style={{
                 justifyContent: open ? 'flex-start' : 'center',
@@ -159,6 +159,24 @@ const DashboardLayout = ({ children }) => {
                 </span>
               )}
             </Link>
+
+            <Link
+              to="/reports"
+              title="Reports"
+              onClick={closeMobileMenu}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-[var(--ease-base)]"
+              style={{
+                justifyContent: open ? 'flex-start' : 'center',
+                textDecoration: 'none',
+                background: isActive('/reports') ? 'var(--accent-muted)' : 'transparent',
+                color: isActive('/reports') ? 'var(--accent-text)' : 'var(--text-muted)',
+              }}
+              onMouseEnter={e => { if (!isActive('/reports')) { e.currentTarget.style.background='var(--surface-overlay)'; e.currentTarget.style.color='var(--text-primary)'; } }}
+              onMouseLeave={e => { if (!isActive('/reports')) { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-muted)'; } }}
+            >
+              <BarChart3 size={16} className="shrink-0" />
+              {open && <span>Reports</span>}
+            </Link>
           </nav>
 
           {/* Bottom */}
@@ -167,6 +185,7 @@ const DashboardLayout = ({ children }) => {
             <Link
               to="/profile"
               title={profile?.name || 'Profile'}
+              onClick={closeMobileMenu}
               className="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] group transition-all duration-[var(--ease-base)]"
               style={{ justifyContent: open ? 'flex-start' : 'center', textDecoration: 'none', color: 'var(--text-muted)' }}
               onMouseEnter={e => { e.currentTarget.style.background='var(--surface-overlay)'; e.currentTarget.style.color='var(--text-primary)'; }}

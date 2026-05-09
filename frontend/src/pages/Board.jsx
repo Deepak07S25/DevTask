@@ -11,16 +11,12 @@ import { BoardHeader } from "../features/board/components/BoardHeader";
 import { BoardColumn } from "../features/board/components/BoardColumn";
 import { Skeleton } from "../design-system/Skeleton";
 import { useToast } from "../design-system/Toast";
-
-const columns = [
-  { key: "TODO", label: "To Do", color: "bg-zinc-500" },
-  { key: "IN_PROGRESS", label: "In Progress", color: "bg-sky-500" },
-  { key: "DONE", label: "Done", color: "bg-green-500" },
-];
+import BoardSettingsPanel from "../components/BoardSettingsPanel";
 
 const Board = () => {
   const { id } = useParams();
   const [project, setProject] = useState(null);
+  const [columns, setColumns] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [members, setMembers] = useState([]);
@@ -28,6 +24,7 @@ const Board = () => {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,12 +53,21 @@ const Board = () => {
       if (activeFilters.assigneeId) params.set("assigneeId", activeFilters.assigneeId);
       if (activeFilters.priority) params.set("priority", activeFilters.priority);
       if (activeFilters.type) params.set("type", activeFilters.type);
-      const [projRes, taskRes] = await Promise.all([
+      const [projRes, taskRes, colRes] = await Promise.all([
         API.get(`/projects/${id}`),
         API.get(`/tasks?${params.toString()}`),
+        API.get(`/projects/${id}/columns`)
       ]);
       setProject(projRes.data);
       setTasks(taskRes.data);
+      // Map backend custom columns to Board column format
+      setColumns(colRes.data.map(c => ({
+        id: c.id,
+        key: c.name,
+        label: c.name,
+        color: c.color,
+        raw: c
+      })));
     } catch {
       setError("Failed to load board. Please try again.");
     } finally {
@@ -154,6 +160,7 @@ const Board = () => {
           onSprintSelect={setActiveSprint}
           onOpenMembers={() => setIsMembersModalOpen(true)}
           onOpenCreateTask={() => setIsTaskModalOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
         {/* Filter Bar */}
@@ -219,6 +226,25 @@ const Board = () => {
         onClose={() => setIsMembersModalOpen(false)}
         projectId={id}
       />
+
+      {isSettingsOpen && (
+        <BoardSettingsPanel
+          projectId={id}
+          columns={columns.map(c => ({ id: c.id, name: c.key, color: c.color }))}
+          onColumnsChanged={(newCols) => {
+             // Map back to our Board format
+             setColumns(newCols.map(c => ({
+               id: c.id,
+               key: c.name,
+               label: c.name,
+               color: c.color,
+               raw: c
+             })));
+             fetchTasks(activeSprint, filters); // Refresh tasks to apply new statuses
+          }}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
     </DashboardLayout>
   );
 };

@@ -31,6 +31,19 @@ model Project {
   sprints     Sprint[]
   tasks       Task[]
   labels      Label[]
+  boardColumns BoardColumn[]
+}
+
+model BoardColumn {
+  id        String  @id @default(uuid())
+  name      String
+  color     String? @default("#6366f1")
+  order     Int     @default(0)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId])
 }
 
 model ProjectMember {
@@ -51,7 +64,7 @@ model Task {
   taskNumber  Int
   title       String
   description String?
-  status      Status         @default(TODO)
+  status      String         @default("Todo")
   priority    Priority       @default(MEDIUM)
   projectId   String
   assigneeId  String?
@@ -168,11 +181,6 @@ enum IssueType {
   TASK
 }
 
-enum Status {
-  TODO
-  IN_PROGRESS
-  DONE
-}
 
 enum Priority {
   LOW

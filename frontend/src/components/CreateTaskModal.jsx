@@ -12,7 +12,7 @@ const DEFAULT_FORM = {
   description: '',
   type: 'TASK',
   epicId: '',
-  status: 'TODO',
+  status: '', // We'll set this dynamically
   priority: 'MEDIUM',
   assigneeId: '',
   dueDate: '',
@@ -33,6 +33,7 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
   const [epics, setEpics] = useState([]);
   const [epicsLoading, setEpicsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [columns, setColumns] = useState([]);
   const [error, setError] = useState('');
 
   // Fetch project members and epics when modal opens
@@ -65,8 +66,21 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
       }
     };
 
+    const fetchColumns = async () => {
+      try {
+        const res = await API.get(`/projects/${projectId}/columns`);
+        setColumns(res.data);
+        if (res.data.length > 0) {
+          setFormData(prev => ({ ...prev, status: res.data[0].name }));
+        }
+      } catch {
+        setColumns([]);
+      }
+    };
+
     fetchMembers();
     fetchEpics();
+    fetchColumns();
   }, [isOpen, projectId]);
 
   if (!isOpen) return null;
@@ -175,11 +189,11 @@ const CreateTaskModal = ({ isOpen, onClose, projectId, sprintId, onTaskCreated }
               className={SELECT_BASE}
               value={formData.status}
               onChange={(e) => handleChange('status', e.target.value)}
-              disabled={submitting}
+              disabled={submitting || columns.length === 0}
             >
-              <option value="TODO">To Do</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="DONE">Done</option>
+              {columns.map(col => (
+                <option key={col.id} value={col.name}>{col.name}</option>
+              ))}
             </select>
             <span className="absolute right-3 top-[34px] pointer-events-none text-[var(--text-muted)] text-xs">▼</span>
           </div>

@@ -6,4 +6,5 @@ export { Input, Textarea }    from './Input';
 export { EmptyState }   from './EmptyState';
 export { Skeleton, SkeletonText } from './Skeleton';
 export { Modal }        from './Modal';
+export { Select }       from './Select';
 export { cn }           from './utils';

@@ -27,6 +27,7 @@ const createProjectSchema = z.object({
 const editProjectSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional().nullable(),
+  columns: z.array(z.string()).optional(),
 }).strict();
 
 const addMemberSchema = z.object({
@@ -39,7 +40,7 @@ const createTaskSchema = z.object({
   description: z.string().optional().nullable(),
   projectId: z.string().uuid(),
   assigneeId: z.string().uuid().optional().nullable(),
-  status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
+  status: z.string().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
   dueDate: z.string().datetime().optional().nullable().or(z.date().optional()),
   sprintId: z.string().uuid().optional().nullable(),

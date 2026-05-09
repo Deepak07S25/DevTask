@@ -23,4 +23,7 @@ router.get('/:id/members', protect, resolveProjectRole, authorize('ADMIN', 'MEMB
 router.post('/:id/members', protect, resolveProjectRole, authorize('ADMIN'), validateSafe(addMemberSchema), addMember);
 router.delete('/:id/members/:userId', protect, resolveProjectRole, authorize('ADMIN'), removeMember);
 
+const columnRoutes = require('./columnRoutes');
+router.use('/:projectId/columns', columnRoutes);
+
 module.exports = router;

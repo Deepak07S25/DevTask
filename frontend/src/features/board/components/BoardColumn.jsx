@@ -15,7 +15,11 @@ export const BoardColumn = ({ column, tasks, draggedTaskId, onDragOver, onDrop, 
     >
       {/* Column Header */}
       <div className="flex items-center gap-2.5 p-4 border-b border-[var(--border)] shrink-0">
-        <span className={cn("w-2.5 h-2.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]", column.color)} />
+        <span 
+          className="w-2.5 h-2.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]" 
+          style={{ backgroundColor: column.color?.startsWith('#') ? column.color : undefined }}
+          {...(!column.color?.startsWith('#') ? { className: cn("w-2.5 h-2.5 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]", column.color) } : {})}
+        />
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">
           {column.label}
         </h3>

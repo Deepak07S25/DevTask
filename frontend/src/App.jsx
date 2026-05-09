@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Board from "./pages/Board";
 import Backlog from "./pages/Backlog";
+import Reports from "./pages/Reports";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/register"             element={<Register />} />
         <Route path="/login"                element={<Login />} />
         <Route path="/dashboard"            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/reports"              element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/project/:id"          element={<ProtectedRoute><Board /></ProtectedRoute>} />
         <Route path="/project/:id/backlog"  element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
         <Route path="/profile"              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
