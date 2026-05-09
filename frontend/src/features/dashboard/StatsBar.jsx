@@ -5,7 +5,23 @@ const isToday = (d) => {
   const n = new Date(), t = new Date(d);
   return t.getFullYear() === n.getFullYear() && t.getMonth() === n.getMonth() && t.getDate() === n.getDate();
 };
-const isOverdue = (d, s) => d && s !== 'DONE' && new Date(d) < new Date();
+
+// Matches any "done-like" status: Done, DONE, Released, Deployed, Closed, etc.
+const isDone = (status) => {
+  if (!status) return false;
+  const s = status.toLowerCase();
+  return s === 'done' || s === 'released' || s === 'deployed' || s === 'closed' || s === 'complete' || s === 'completed';
+};
+
+// Matches any "in progress-like" status: In Progress, IN_PROGRESS, Doing, In Review, etc.
+const isInProgress = (status) => {
+  if (!status) return false;
+  const s = status.toLowerCase();
+  return s.includes('progress') || s === 'doing' || s === 'in_progress' || s === 'in review' || s === 'testing' || s === 'qa' || s === 'staging';
+};
+
+const isOverdue = (dueDate, status) =>
+  dueDate && !isDone(status) && new Date(dueDate) < new Date();
 
 const Stat = ({ value, label, accent, warn }) => (
   <div
@@ -26,8 +42,8 @@ const Stat = ({ value, label, accent, warn }) => (
 );
 
 export const StatsBar = ({ tasks = [], projectCount = 0 }) => {
-  const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length;
-  const dueToday   = tasks.filter(t => t.status !== 'DONE' && isToday(t.dueDate)).length;
+  const inProgress = tasks.filter(t => isInProgress(t.status)).length;
+  const dueToday   = tasks.filter(t => !isDone(t.status) && isToday(t.dueDate)).length;
   const overdue    = tasks.filter(t => isOverdue(t.dueDate, t.status)).length;
 
   return (
