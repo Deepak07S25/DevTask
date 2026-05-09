@@ -93,7 +93,7 @@ const Dashboard = () => {
           <div className="flex flex-col lg:grid lg:grid-cols-[1fr_340px] gap-6 items-start">
 
             {/* LEFT — My Work */}
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">My Work</h2>
                 <span className="text-[11px] text-[var(--text-muted)]">
