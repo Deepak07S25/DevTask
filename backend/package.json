@@ -11,7 +11,8 @@
     "start:prod": "node server.js",
     "dev": "nodemon server.js",
     "db:sync-plan": "cat scripts/db-reconciliation-plan.md",
-    "db:backfill-keys": "node scripts/backfill-project-keys.js"
+    "db:backfill-keys": "node scripts/backfill-project-keys.js",
+    "seed": "node scripts/seed-comprehensive.js"
   },
   "author": "",
   "license": "ISC",
