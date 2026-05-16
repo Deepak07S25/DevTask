@@ -58,6 +58,7 @@ const createSprintSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().min(1, "Sprint name is required"),
   goal: z.string().optional().nullable(),
+  status: z.enum(["PLANNED", "ACTIVE", "COMPLETED"]).optional(),
   startDate: z.string().datetime().optional().nullable().or(z.date().optional()),
   endDate: z.string().datetime().optional().nullable().or(z.date().optional()),
 }).strict();

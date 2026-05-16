@@ -1,5 +1,6 @@
 import { Calendar, CheckSquare, Layers, Bookmark, Bug, AlertCircle } from 'lucide-react';
 import { Badge } from '../../../design-system/Badge';
+import { RiskBadge } from '../../../design-system/RiskBadge';
 import { cn } from '../../../design-system/utils';
 
 const PRIORITY_STYLES = {
@@ -39,9 +40,14 @@ export const TaskCard = ({ task, isDragged, onDragStart, onClick }) => {
     >
       {/* Top: Issue Type & Priority */}
       <div className="flex items-center justify-between mb-2">
-        <Badge variant={PRIORITY_STYLES[task.priority] || 'default'}>
-          {task.priority}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={PRIORITY_STYLES[task.priority] || 'default'}>
+            {task.priority}
+          </Badge>
+          {task.riskLevel && task.riskLevel !== 'NONE' && (
+            <RiskBadge level={task.riskLevel} showLabel={false} />
+          )}
+        </div>
         <span className="opacity-80 group-hover:opacity-100 transition-opacity">
           {TYPE_ICONS[task.type || 'TASK']}
         </span>

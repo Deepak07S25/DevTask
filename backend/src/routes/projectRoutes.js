@@ -26,4 +26,7 @@ router.delete('/:id/members/:userId', protect, resolveProjectRole, authorize('AD
 const columnRoutes = require('./columnRoutes');
 router.use('/:projectId/columns', columnRoutes);
 
+const aiProjectRoutes = require('./aiProjectRoutes');
+router.use('/:id/ai', aiProjectRoutes);
+
 module.exports = router;

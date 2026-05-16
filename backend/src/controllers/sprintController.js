@@ -16,8 +16,8 @@ const createSprint = async (req, res) => {
 const getProjectSprints = async (req, res) => {
     try {
         const { projectId } = req.query;
-        if (!projectId) {
-            return res.status(400).json({ message: 'projectId query param required' });
+        if (!projectId || projectId === 'undefined' || projectId === 'null' || projectId === '[object Object]') {
+            return res.json([]);
         }
         const sprints = await sprintService.getProjectSprints(projectId);
         res.json(sprints);

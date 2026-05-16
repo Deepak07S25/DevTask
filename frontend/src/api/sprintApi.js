@@ -1,8 +1,10 @@
 import API from './axios';
 
 export const sprintApi = {
-    getSprints: (projectId) =>
-        API.get(`/sprints?projectId=${projectId}`).then(r => r.data),
+    getSprints: (projectId) => {
+        if (!projectId || projectId === 'undefined' || projectId === 'null') return Promise.resolve([]);
+        return API.get(`/sprints?projectId=${projectId}`).then(r => r.data);
+    },
 
     createSprint: (data) =>
         API.post('/sprints', data).then(r => r.data),

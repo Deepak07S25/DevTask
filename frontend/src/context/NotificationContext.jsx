@@ -39,7 +39,7 @@ export const NotificationProvider = ({ children }) => {
             reconnection: true,             // Auto-reconnect if network drops
             reconnectionAttempts: 10,       // Try 10 times before giving up
             reconnectionDelay: 2000,        // Wait 2s between tries
-            transports: ['websocket', 'polling'] // Try WebSocket first, fallback to polling
+            transports: ['polling', 'websocket'] // Start with polling to ensure cookies are sent, then upgrade
         });
 
         socket.on('new_notification', (notification) => {

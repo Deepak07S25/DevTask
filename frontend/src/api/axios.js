@@ -15,4 +15,22 @@ API.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+API.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Token is expired or invalid
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Redirect to login if not already there
+            const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+            if (!isAuthPage) {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default API;

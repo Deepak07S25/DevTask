@@ -30,8 +30,8 @@ const CreateSprintModal = ({ isOpen, onClose, projectId, onSprintCreated }) => {
         projectId,
         name: name.trim(),
         goal: goal.trim() || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
       });
       onSprintCreated(sprint);
       handleClose();

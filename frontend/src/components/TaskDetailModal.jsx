@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Edit2, Save, Trash2, MessageSquare, History, CheckSquare, Bookmark, Bug, Layers } from 'lucide-react';
+import { X, Edit2, Save, Trash2, MessageSquare, History, CheckSquare, Bookmark, Bug, Layers, Sparkles } from 'lucide-react';
 import API from '../api/axios';
 import ActivityTimeline from './ActivityTimeline';
 import MarkdownEditor, { MarkdownContent } from './MarkdownEditor';
 import { Badge, StatusBadge } from '../design-system/Badge';
+import { RiskBadge } from '../design-system/RiskBadge';
 import { Button } from '../design-system/Button';
 import { IconButton } from '../design-system/IconButton';
 import { CommentThread } from '../features/task-detail/components/CommentThread';
@@ -57,6 +58,9 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
   const [newComment,      setNewComment]      = useState('');
   const [postingComment,  setPostingComment]  = useState(false);
 
+  const [insights,        setInsights]        = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
   const currentUserId = getLoggedInUserId();
 
   useEffect(() => {
@@ -83,6 +87,7 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
     setIsEditing(false);
     setConfirmDelete(false);
     setActiveTab('comments');
+    setInsights(null);
     fetchComments();
     if (projectId) {
       API.get(`/projects/${projectId}/members`).then(r => setMembers(r.data)).catch(() => setMembers([]));
@@ -261,6 +266,21 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
                   <button onClick={() => setActiveTab('activity')} className={TAB_BTN(activeTab === 'activity')}>
                     <History size={13} /> Activity
                   </button>
+                  <button 
+                    onClick={() => {
+                      setActiveTab('insights');
+                      if (!insights && !insightsLoading) {
+                        setInsightsLoading(true);
+                        API.get(`/tasks/${task.id}/ai/insights`)
+                           .then(r => setInsights(r.data.data))
+                           .catch(() => {})
+                           .finally(() => setInsightsLoading(false));
+                      }
+                    }} 
+                    className={TAB_BTN(activeTab === 'insights')}
+                  >
+                    <Sparkles size={13} className="text-purple-400" /> AI Insights
+                  </button>
                 </div>
 
                 {activeTab === 'comments' ? (
@@ -274,8 +294,26 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
                     onDelete={handleDeleteComment}
                     posting={postingComment}
                   />
-                ) : (
+                ) : activeTab === 'activity' ? (
                   <ActivityTimeline taskId={task.id} />
+                ) : (
+                  <div className="text-sm">
+                    {insightsLoading ? (
+                      <p className="text-purple-400 animate-pulse flex items-center gap-2"><Sparkles size={14}/> Generating AI insights...</p>
+                    ) : insights ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <RiskBadge level={insights.riskLevel} />
+                          <span className="text-xs text-[var(--text-muted)]">Risk Score: {insights.riskScore}</span>
+                        </div>
+                        <ul className="list-disc pl-4 space-y-1 text-[var(--text-secondary)]">
+                          {insights.insights.map((msg, i) => <li key={i}>{msg}</li>)}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-[var(--text-muted)]">Could not load AI insights.</p>
+                    )}
+                  </div>
                 )}
               </div>
             )}

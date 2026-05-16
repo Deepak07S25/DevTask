@@ -12,6 +12,7 @@ import { BoardColumn } from "../features/board/components/BoardColumn";
 import { Skeleton } from "../design-system/Skeleton";
 import { useToast } from "../design-system/Toast";
 import BoardSettingsPanel from "../components/BoardSettingsPanel";
+import { AIHealthWidget } from "../features/board/components/AIHealthWidget";
 
 const Board = () => {
   const { id } = useParams();
@@ -183,6 +184,11 @@ const Board = () => {
             📌 Viewing <strong className="text-[var(--text-primary)]">{activeSprint.name}</strong> — status: <strong>{activeSprint.status}</strong>
           </div>
         )}
+
+        {/* AI Health Widget */}
+        <div className="mb-5">
+          <AIHealthWidget projectId={id} />
+        </div>
 
         {/* Kanban Columns */}
         <div className="flex gap-5 pb-4 overflow-x-auto items-start h-[calc(100vh-280px)]">

@@ -339,8 +339,8 @@ const Reports = () => {
               <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
                 <Card padding="lg">
                   <CardHeader title="Project Workload" subtitle="Open, done, and overdue work by project" />
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-80" style={{ minWidth: 0, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <BarChart data={report.projectData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                         <CartesianGrid stroke="var(--border)" vertical={false} />
                         <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
@@ -357,8 +357,8 @@ const Reports = () => {
                 <Card padding="lg">
                   <CardHeader title="Status Mix" subtitle="Current distribution across the filtered work" />
                   <div className="grid gap-4 sm:grid-cols-[180px_1fr] xl:grid-cols-1">
-                    <div className="h-52">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-52" style={{ minWidth: 0, minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                         <PieChart>
                           <Pie data={report.statusData} dataKey="value" innerRadius={52} outerRadius={78} paddingAngle={3}>
                             {report.statusData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
@@ -383,8 +383,8 @@ const Reports = () => {
 
                 <Card padding="lg">
                   <CardHeader title="Throughput Trend" subtitle={`Created vs completed tasks over the last ${Math.min(Number(range), 30)} days`} />
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="h-72" style={{ minWidth: 0, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <AreaChart data={report.trendDays} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="createdGradient" x1="0" y1="0" x2="0" y2="1">

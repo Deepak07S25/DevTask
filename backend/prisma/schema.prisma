@@ -87,6 +87,13 @@ model Task {
   sprint      Sprint?        @relation(fields: [sprintId], references: [id])
   activities  TaskActivity[]
 
+  estimatePoints Int?
+  actualPoints   Int?
+  blocked        Boolean        @default(false)
+  riskScore      Float?
+  riskLevel      TaskRiskLevel  @default(NONE)
+  riskReasons    Json?
+
   @@index([projectId])
   @@index([assigneeId])
   @@index([status])
@@ -207,4 +214,12 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+enum TaskRiskLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Layers, Bookmark, Bug, CheckSquare, User, Calendar, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { StatusBadge } from '../../../design-system/Badge';
+import { RiskBadge } from '../../../design-system/RiskBadge';
 
 const PRIORITY_DOT = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#22c55e' };
 
@@ -62,6 +63,9 @@ export const BacklogTaskRow = ({ task, onSelect, onAddToSprint, onRemoveFromSpri
           >
             {task.epic.title}
           </span>
+        )}
+        {task.riskLevel && task.riskLevel !== 'NONE' && (
+          <RiskBadge level={task.riskLevel} showLabel={false} className="shrink-0" />
         )}
       </div>
 

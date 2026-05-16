@@ -26,5 +26,8 @@ router.delete("/:taskId", protect, verifyTaskAccess, authorize('ADMIN', 'MEMBER'
 router.use('/:taskId/comments', commentRoutes);
 router.use('/:taskId/activities', activityRoutes);
 
+const aiTaskRoutes = require('./aiTaskRoutes');
+router.use('/:taskId/ai', aiTaskRoutes);
+
 module.exports = router;
 
