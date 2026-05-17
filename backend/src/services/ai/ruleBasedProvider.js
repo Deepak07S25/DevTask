@@ -110,8 +110,36 @@ class RuleBasedProvider {
   }
 
   async chat(context, message) {
+    const msg = message.toLowerCase();
+    let reply = `[Rule-Based AI] I know about ${context.totalTasks} tasks in this project. I have limited conversational capability. Please use the External AI provider for richer conversations.`;
+    
+    if (msg.includes("at risk")) {
+      const atRisk = context.tasks.filter(t => t.blocked || (t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Done") || t.priority === "HIGH");
+      reply = `[Rule-Based AI] There are ${atRisk.length} tasks at risk (blocked, overdue, or high priority).`;
+      if (atRisk.length > 0) reply += ` Example: ${atRisk[0].title}.`;
+    } else if (msg.includes("overdue")) {
+      const overdue = context.tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Done");
+      reply = `[Rule-Based AI] There are ${overdue.length} overdue tasks.`;
+    } else if (msg.includes("blocked")) {
+      const blocked = context.tasks.filter(t => t.blocked);
+      reply = `[Rule-Based AI] There are ${blocked.length} blocked tasks.`;
+    } else if (msg.includes("overloaded")) {
+      const assigneeCounts = {};
+      context.tasks.forEach(t => {
+        if (t.status !== "Done" && t.assignee && t.assignee !== "Unassigned") {
+          assigneeCounts[t.assignee] = (assigneeCounts[t.assignee] || 0) + 1;
+        }
+      });
+      const overloaded = Object.entries(assigneeCounts).filter(([_, count]) => count > 3).map(([name]) => name);
+      if (overloaded.length > 0) {
+        reply = `[Rule-Based AI] The following team members might be overloaded (>3 open tasks): ${overloaded.join(', ')}.`;
+      } else {
+        reply = `[Rule-Based AI] No team members appear to be overloaded currently.`;
+      }
+    }
+
     return {
-      reply: `[Rule-Based AI] I see you asked: "${message}". I know about ${context.totalTasks} tasks in this project. As a rule-based AI, I have limited conversational capability. Please use the External AI provider for richer conversations.`,
+      reply,
       sources: []
     };
   }

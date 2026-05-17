@@ -1,0 +1,10 @@
+-- CreateEnum
+CREATE TYPE "TaskRiskLevel" AS ENUM ('NONE', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+
+-- AlterTable
+ALTER TABLE "Task" ADD COLUMN "actualPoints" INTEGER;
+ALTER TABLE "Task" ADD COLUMN "estimatePoints" INTEGER;
+ALTER TABLE "Task" ADD COLUMN "blocked" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Task" ADD COLUMN "riskLevel" "TaskRiskLevel" NOT NULL DEFAULT 'NONE';
+ALTER TABLE "Task" ADD COLUMN "riskReasons" JSONB;
+ALTER TABLE "Task" ADD COLUMN "riskScore" DOUBLE PRECISION;

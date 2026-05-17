@@ -49,6 +49,12 @@ const createTaskSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
   rank: z.number().optional(),
   labels: z.array(z.string().min(1)).optional(),
+  blocked: z.boolean().optional(),
+  estimatePoints: z.number().int().nonnegative().optional().nullable(),
+  actualPoints: z.number().int().nonnegative().optional().nullable(),
+  riskScore: z.number().optional().nullable(),
+  riskLevel: z.enum(["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+  riskReasons: z.any().optional().nullable(),
 }).strict();
 
 const updateTaskSchema = createTaskSchema.partial();

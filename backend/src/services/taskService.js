@@ -1,7 +1,8 @@
 const prisma = require('../db/client');
 const { enqueueNotification } = require('../queues/notificationQueue');
+const riskService = require('./riskService');
 
-const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId, parentId, rank, labels) => {
+const createTask = async (title, description, projectId, assigneeId, status, priority, dueDate, userId, sprintId, type, epicId, parentId, rank, labels, blocked, estimatePoints, actualPoints, riskScore, riskLevel, riskReasons) => {
     if (assigneeId) {
         const member = await prisma.projectMember.findFirst({ where: { projectId, userId: assigneeId } });
         if (!member) throw new Error("Assignee must be a member of the project");
@@ -20,7 +21,7 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
         if (!parent || parent.projectId !== projectId) throw new Error("Parent task must belong to the same project");
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const createdTask = await prisma.$transaction(async (tx) => {
         const maxTask = await tx.task.aggregate({
             where: { projectId },
             _max: { taskNumber: true }
@@ -40,7 +41,13 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
             epicId: epicId || null,
             parentId: parentId || null,
             rank: rank !== undefined ? rank : 0,
-            taskNumber
+            taskNumber,
+            blocked: blocked || false,
+            estimatePoints: estimatePoints !== undefined ? estimatePoints : null,
+            actualPoints: actualPoints !== undefined ? actualPoints : null,
+            riskScore: riskScore !== undefined ? riskScore : null,
+            riskLevel: riskLevel !== undefined ? riskLevel : 'NONE',
+            riskReasons: riskReasons !== undefined ? riskReasons : null
         };
 
         if (labels && labels.length > 0) {
@@ -59,7 +66,7 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
             };
         }
 
-        const task = await tx.task.create({
+        const txCreatedTask = await tx.task.create({
             data,
             include: {
                 assignee: { select: { id: true, name: true, email: true } },
@@ -70,11 +77,13 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
             }
         });
 
-        const activities = [{ taskId: task.id, userId, action: 'created this task' }];
+
+
+        const activities = [{ taskId: txCreatedTask.id, userId, action: 'created this task' }];
         
         if (dueDate) {
             const dateStr = new Date(dueDate).toISOString().split('T')[0];
-            activities.push({ taskId: task.id, userId, action: 'set due date', details: `to ${dateStr}` });
+            activities.push({ taskId: txCreatedTask.id, userId, action: 'set due date', details: `to ${dateStr}` });
         }
 
         await tx.taskActivity.createMany({ data: activities });
@@ -84,16 +93,26 @@ const createTask = async (title, description, projectId, assigneeId, status, pri
                 recipientId: assigneeId,
                 actorId: userId,
                 data: {
-                    entityId: task.id,
-                    entityTitle: task.title,
-                    projectId: task.projectId,
-                    link: `/project/${task.projectId}`
+                    entityId: txCreatedTask.id,
+                    entityTitle: txCreatedTask.title,
+                    projectId: txCreatedTask.projectId,
+                    link: `/project/${txCreatedTask.projectId}`
                 }
             });
         }
 
-        return task;
+        return txCreatedTask;
     });
+
+    try {
+        const riskUpdatedTask = await riskService.updateTaskRisk(createdTask.id);
+        Object.assign(createdTask, riskUpdatedTask);
+    } catch (error) {
+        console.error("Failed to calculate AI risk on create:", error);
+        throw new Error("Failed to calculate AI risk on create");
+    }
+    
+    return createdTask;
 };
 
 const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, priority, page = 1, limit = 100) => {
@@ -147,7 +166,9 @@ const getProjectTasks = async (projectId, sprintId, type, search, assigneeId, pr
 };
 
 const updateTask = async (taskId, updateData, userId) => {
-    return await prisma.$transaction(async (tx) => {
+    let relevantFieldsChanged = false;
+    
+    const updatedTask = await prisma.$transaction(async (tx) => {
         const oldTask = await tx.task.findUnique({ where: { id: taskId } });
         if (!oldTask) throw new Error("Task not found");
 
@@ -174,6 +195,19 @@ const updateTask = async (taskId, updateData, userId) => {
         if (updateData.priority !== undefined && updateData.priority !== oldTask.priority) {
             data.priority = updateData.priority;
             activities.push({ taskId, userId, action: 'changed priority', details: `from ${oldTask.priority} to ${updateData.priority}` });
+        }
+        
+        if (updateData.blocked !== undefined && updateData.blocked !== oldTask.blocked) {
+            data.blocked = updateData.blocked;
+            activities.push({ taskId, userId, action: updateData.blocked ? 'marked task as blocked' : 'removed block' });
+        }
+        if (updateData.estimatePoints !== undefined && updateData.estimatePoints !== oldTask.estimatePoints) {
+            data.estimatePoints = updateData.estimatePoints;
+            activities.push({ taskId, userId, action: 'updated estimate' });
+        }
+        if (updateData.actualPoints !== undefined && updateData.actualPoints !== oldTask.actualPoints) {
+            data.actualPoints = updateData.actualPoints;
+            activities.push({ taskId, userId, action: 'updated actual points' });
         }
         
         if (updateData.dueDate !== undefined) {
@@ -261,8 +295,26 @@ const updateTask = async (taskId, updateData, userId) => {
             });
         }
 
+        // Determine if risk calculation is needed
+        const relevantFields = ['dueDate', 'blocked', 'priority', 'assigneeId', 'description', 'status', 'estimatePoints', 'actualPoints'];
+        if (relevantFields.some(field => updateData[field] !== undefined)) {
+            relevantFieldsChanged = true;
+        }
+
         return task;
     });
+
+    if (relevantFieldsChanged) {
+        try {
+            const riskUpdatedTask = await riskService.updateTaskRisk(updatedTask.id);
+            Object.assign(updatedTask, riskUpdatedTask);
+        } catch (error) {
+            console.error("Failed to calculate AI risk on update:", error);
+            throw new Error("Failed to calculate AI risk on update");
+        }
+    }
+
+    return updatedTask;
 };
 
 const deleteTask = async (taskId) => {
