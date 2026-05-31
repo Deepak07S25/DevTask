@@ -12,7 +12,8 @@
     "dev": "nodemon server.js",
     "db:sync-plan": "cat scripts/db-reconciliation-plan.md",
     "db:backfill-keys": "node scripts/backfill-project-keys.js",
-    "seed": "node scripts/seed-comprehensive.js"
+    "seed": "node scripts/seed-comprehensive.js",
+    "test": "jest --runInBand --detectOpenHandles"
   },
   "author": "",
   "license": "ISC",
@@ -35,7 +36,9 @@
   "devDependencies": {
     "@prisma/config": "^7.4.1",
     "@types/node": "^25.3.0",
+    "jest": "^30.4.2",
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

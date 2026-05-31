@@ -1,0 +1,34 @@
+name: Run Backend Integration Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+      working-directory: backend
+
+    - name: Run Tests
+      run: npm test
+      working-directory: backend
+      env:
+        NODE_ENV: test
+        DATABASE_URL: "postgresql://mockuser:mockpassword@localhost:5432/mockdb" # Dummy URL to satisfy env validation check
+        JWT_SECRET: "test-environment-jwt-secret-key-12345"
