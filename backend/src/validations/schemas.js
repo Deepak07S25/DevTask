@@ -76,6 +76,12 @@ const createCommentSchema = z.object({
   body: z.string().min(1, "Comment body cannot be empty"),
 }).strict();
 
+// --- Agent Schemas ---
+const agentRequestSchema = z.object({
+  message: z.string().min(1, "Message cannot be empty").max(2000, "Message must be 2000 characters or fewer"),
+  projectId: z.string().uuid().optional(),
+}).strict();
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -88,4 +94,5 @@ module.exports = {
   createSprintSchema,
   updateSprintSchema,
   createCommentSchema,
+  agentRequestSchema,
 };

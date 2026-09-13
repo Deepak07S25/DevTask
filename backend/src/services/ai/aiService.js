@@ -1,10 +1,14 @@
 const ruleBasedProvider = require('./ruleBasedProvider');
 const externalProvider = require('./externalProvider');
+const geminiProvider = require('./providers/geminiProvider');
 const ContextBuilder = require('./contextBuilder');
 
 class AIService {
   getProvider() {
-    return process.env.AI_PROVIDER === 'external' ? externalProvider : ruleBasedProvider;
+    const providerType = process.env.AI_PROVIDER;
+    if (providerType === 'gemini') return geminiProvider;
+    if (providerType === 'external') return externalProvider;
+    return ruleBasedProvider;
   }
 
   async getProjectHealth(projectId) {
