@@ -37,7 +37,7 @@ const TAB_BTN = (active) => cn(
 );
 
 /* ── Component ────────────────────────────────────────────────────────────── */
-const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, projectId }) => {
+const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, projectId, onAskAi }) => {
   const [isEditing, setIsEditing]       = useState(false);
   const [loading, setLoading]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -210,6 +210,28 @@ const TaskDetailModal = ({ task, isOpen, onClose, onTaskUpdated, onTaskDeleted, 
 
           {/* Actions */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {task.blocked && onAskAi && !isEditing && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                icon={<Sparkles size={13} className="text-amber-400" />}
+                onClick={() => onAskAi(task, "Why is this task blocked and what is needed to unblock it?")}
+              >
+                Analyze why blocked
+              </Button>
+            )}
+            {onAskAi && !isEditing && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-[var(--ai-accent,#8b5cf6)] border-[var(--ai-border,rgba(139,92,246,0.25))] hover:bg-[var(--ai-bg-subtle,rgba(139,92,246,0.1))]"
+                icon={<Sparkles size={13} style={{ color: 'var(--ai-accent-text, #a78bfa)' }} />}
+                onClick={() => onAskAi(task)}
+              >
+                Ask AI
+              </Button>
+            )}
             {!isEditing && !confirmDelete && (
               <Button variant="secondary" size="sm" icon={<Edit2 size={13} />} onClick={() => setIsEditing(true)}>
                 Edit

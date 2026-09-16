@@ -13,6 +13,7 @@ import { Skeleton } from "../design-system/Skeleton";
 import { useToast } from "../design-system/Toast";
 import BoardSettingsPanel from "../components/BoardSettingsPanel";
 import { AIHealthWidget } from "../features/board/components/AIHealthWidget";
+import ProjectIntelligencePanel from "../features/board/components/ProjectIntelligencePanel";
 
 const Board = () => {
   const { id } = useParams();
@@ -26,6 +27,8 @@ const Board = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+  const [aiContext, setAiContext] = useState({ type: 'project' });
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -162,6 +165,10 @@ const Board = () => {
           onOpenMembers={() => setIsMembersModalOpen(true)}
           onOpenCreateTask={() => setIsTaskModalOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenIntelligence={() => {
+            setAiContext({ type: 'project' });
+            setIsIntelligenceOpen(true);
+          }}
         />
 
         {/* Filter Bar */}
@@ -224,6 +231,10 @@ const Board = () => {
           onTaskUpdated={handleTaskUpdated}
           onTaskDeleted={handleTaskDeleted}
           projectId={id}
+          onAskAi={(task, initialQuery) => {
+            setAiContext({ type: 'task', task, initialQuery });
+            setIsIntelligenceOpen(true);
+          }}
         />
       )}
 
@@ -251,6 +262,19 @@ const Board = () => {
           onClose={() => setIsSettingsOpen(false)}
         />
       )}
+
+      {/* Project Intelligence Panel — projectId from useParams, never hardcoded */}
+      <ProjectIntelligencePanel
+        isOpen={isIntelligenceOpen}
+        onClose={() => setIsIntelligenceOpen(false)}
+        projectId={id}
+        projectName={project?.name}
+        context={aiContext}
+        onSwitchContext={setAiContext}
+        tasks={tasks}
+        onTaskClick={setSelectedTask}
+        isTaskModalOpen={!!selectedTask}
+      />
     </DashboardLayout>
   );
 };

@@ -17,6 +17,13 @@
   --accent-glow:      rgba(59,130,246,0.18);
   --accent-text:      #60a5fa;
 
+  /* AI accent — violet (used only for AI/intelligence surfaces) */
+  --ai-accent:        #7C5CFC;
+  --ai-accent-hover:  #6242D8;
+  --ai-accent-muted:  rgba(124,92,252,0.10);
+  --ai-accent-glow:   rgba(124,92,252,0.18);
+  --ai-accent-text:   #a78bfa;
+
   /* Text */
   --text-primary:     #e4e8f2;
   --text-secondary:   #8490a8;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Plus, List, Users, ChevronDown, CheckCircle2, Settings } from 'lucide-react';
+import { ChevronLeft, Plus, List, Users, ChevronDown, CheckCircle2, Settings, Sparkles } from 'lucide-react';
 import { Button } from '../../../design-system/Button';
 import { cn } from '../../../design-system/utils';
 import { useState, useRef, useEffect } from 'react';
@@ -12,7 +12,8 @@ export const BoardHeader = ({
   onSprintSelect, 
   onOpenMembers, 
   onOpenCreateTask,
-  onOpenSettings
+  onOpenSettings,
+  onOpenIntelligence,
 }) => {
   const [isSprintDropOpen, setIsSprintDropOpen] = useState(false);
   const sprintMenuRef = useRef(null);
@@ -119,6 +120,25 @@ export const BoardHeader = ({
         >
           Settings
         </Button>
+
+        {/* AI Intelligence Entry Point */}
+        <button
+          id="ai-intelligence-launcher"
+          onClick={onOpenIntelligence}
+          aria-label="Open Project Intelligence panel"
+          className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-semibold rounded-[var(--radius-md)] border transition-all duration-[var(--ease-base)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 whitespace-nowrap"
+          style={{
+            background: 'var(--ai-accent-muted)',
+            borderColor: 'var(--ai-accent-glow)',
+            color: 'var(--ai-accent-text)',
+            '--tw-ring-color': 'var(--ai-accent)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(124,92,252,0.18)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--ai-accent-muted)'; }}
+        >
+          <Sparkles size={13} aria-hidden="true" />
+          Intelligence
+        </button>
 
         {/* Primary Action */}
         <Button

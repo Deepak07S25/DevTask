@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Play, CheckCircle, Trash2, Plus, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, CheckCircle, Trash2, Plus, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '../../../design-system/Button';
 import { IconButton } from '../../../design-system/IconButton';
 import { BacklogTaskRow } from './BacklogTaskRow';
@@ -18,7 +18,7 @@ export const SprintSection = ({
   sprint, allSprints, projectId,
   onUpdateStatus, onDelete,
   onTaskSelect, onAddToSprint, onRemoveFromSprint,
-  onTaskCreated,
+  onTaskCreated, onReviewSprint,
 }) => {
   const [collapsed, setCollapsed]       = useState(sprint.status === 'COMPLETED');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -99,6 +99,19 @@ export const SprintSection = ({
 
         {/* Sprint actions */}
         <div className="flex items-center gap-2 shrink-0">
+          {onReviewSprint && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[var(--ai-accent,#8b5cf6)] hover:bg-[var(--ai-accent-muted,rgba(139,92,246,0.1))] px-2"
+              icon={<Sparkles size={12} style={{ color: 'var(--ai-accent-text, #a78bfa)' }} />}
+              onClick={() => onReviewSprint(sprint)}
+              title="Review sprint feasibility & risks"
+            >
+              Review
+            </Button>
+          )}
+
           {/* Add task */}
           <Button
             variant="ghost"
