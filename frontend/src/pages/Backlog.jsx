@@ -13,6 +13,7 @@ import { useToast } from "../design-system/Toast";
 import { BacklogHeader } from "../features/backlog/components/BacklogHeader";
 import { SprintSection } from "../features/backlog/components/SprintSection";
 import { BacklogTaskRow } from "../features/backlog/components/BacklogTaskRow";
+import ProjectIntelligencePanel from "../features/board/components/ProjectIntelligencePanel";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Backlog = () => {
@@ -26,6 +27,8 @@ const Backlog = () => {
   const [isSprintModalOpen,  setIsSprintModalOpen]  = useState(false);
   const [isCreateTaskOpen,   setIsCreateTaskOpen]   = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+  const [aiContext, setAiContext] = useState({ type: 'project' });
   const [filters,      setFilters]      = useState({ search: "", assigneeId: "", priority: "", type: "" });
   const debounceRef = useRef(null);
   const { success, error: toastError } = useToast();
@@ -203,6 +206,10 @@ const Backlog = () => {
             onAddToSprint={handleAddToSprint}
             onRemoveFromSprint={handleRemoveFromSprint}
             onTaskCreated={handleTaskCreated}
+            onReviewSprint={(s) => {
+              setAiContext({ type: 'sprint', sprint: s });
+              setIsIntelligenceOpen(true);
+            }}
           />
         ))}
 
@@ -268,8 +275,25 @@ const Backlog = () => {
           onTaskUpdated={handleTaskUpdated}
           onTaskDeleted={handleTaskDeleted}
           projectId={id}
+          onAskAi={(task, initialQuery) => {
+            setAiContext({ type: 'task', task, initialQuery });
+            setIsIntelligenceOpen(true);
+          }}
         />
       )}
+
+      {/* Project / Sprint / Task Intelligence Panel */}
+      <ProjectIntelligencePanel
+        isOpen={isIntelligenceOpen}
+        onClose={() => setIsIntelligenceOpen(false)}
+        projectId={id}
+        projectName={project?.name}
+        context={aiContext}
+        onSwitchContext={setAiContext}
+        tasks={[...backlogTasks, ...sprints.flatMap(s => s.tasks || [])]}
+        onTaskClick={setSelectedTask}
+        isTaskModalOpen={!!selectedTask}
+      />
     </DashboardLayout>
   );
 };
